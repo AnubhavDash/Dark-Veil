@@ -32,10 +32,10 @@ export const lensImages = pgTable('lens_images', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
-/** Gemini / Lens result cache keyed by sha256 of the query image. */
+/** Google Lens result cache keyed by sha256 of the query image. */
 export const searchCache = pgTable('search_cache', {
   imageHash: text('image_hash').primaryKey(),
-  provider: text('provider').notNull().default('gemini'),
+  provider: text('provider').notNull().default('google_lens'),
   result: jsonb('result').$type<Record<string, unknown>>().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })

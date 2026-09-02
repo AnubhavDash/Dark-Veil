@@ -7,7 +7,6 @@ import type {
   LensResult,
   LogLevel,
   LogLine,
-  SearchProvider,
   SearchResult,
   Source,
   StepId,
@@ -27,7 +26,7 @@ const initialSteps: Record<StepId, StepState> = {
   verify: 'idle',
 }
 
-/** Reshapes a Google Lens payload into the same view model the Gemini panel renders. */
+/** Reshapes a Google Lens payload into the view model chapter 03 renders. */
 function lensToSearch(r: LensResult): SearchResult {
   return {
     model: `google lens · ${r.vendor ?? 'searchapi'}`,
@@ -44,7 +43,7 @@ function lensToSearch(r: LensResult): SearchResult {
       source: m.source,
     })),
     provider: 'google_lens',
-    mode: 'evidence',
+    imageHash: r.imageHash,
     cached: r.cached,
   }
 }
@@ -69,7 +68,6 @@ export function usePipeline() {
 
   const [detected, setDetected] = useState<Detected | null>(null)
 
-  const [provider, setProvider] = useState<SearchProvider>('gemini')
   const [searching, setSearching] = useState(false)
   const [result, setResult] = useState<SearchResult | null>(null)
   const [selected, setSelected] = useState<Source | null>(null)
@@ -115,22 +113,20 @@ export function usePipeline() {
     [setStep],
   )
 
-  /** Reverse-search the crop with whichever provider is selected. */
+  /**
+   * Reverse-search the crop against the live web. Google fetches the crop from
+   * /api/img/<hash> itself, so this needs a publicly reachable origin — on localhost the
+   * route answers 409 and names the URL it could not reach rather than spending a credit.
+   */
   const runSearch = useCallback(async () => {
     if (!detected) return
-    const lens = provider === 'google_lens'
     setSearching(true)
     setStep('search', 'active')
     setResult(null)
     setSelected(null)
-    addLog(
-      'info',
-      lens
-        ? 'uploading crop and querying Google Lens for visual matches…'
-        : 'querying Gemini vision, with Google Lens supplying the citations…',
-    )
+    addLog('info', 'uploading crop and querying Google Lens for visual matches…')
     try {
-      const res = await fetch(lens ? '/api/lens' : '/api/search', {
+      const res = await fetch('/api/lens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: detected.crop }),
@@ -138,7 +134,7 @@ export function usePipeline() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'search failed')
 
-      const next: SearchResult = lens ? lensToSearch(data as LensResult) : { ...data, provider: 'gemini' }
+      const next = lensToSearch(data as LensResult)
       setResult(next)
       setStep('search', 'done')
       if (next.cached) addLog('info', 'cache hit — served from Neon, no API credits spent')
@@ -146,14 +142,9 @@ export function usePipeline() {
       if (next.sources.length > 0) {
         setSelected(next.sources[0])
         addLog('info', `auto-selected top source: ${next.sources[0].url}`)
-      } else if (next.mode === 'vision') {
-        // Nothing was fabricated to fill the gap, which is the point — but it does mean
-        // chapter 04 has no URL to anchor, so say why rather than leaving it looking broken.
-        addLog(
-          'warn',
-          'no citations: this origin cannot be reached by Google, so the answer is from the crop alone',
-        )
       } else {
+        // Nothing is invented to fill the gap, which is the point — but it does mean
+        // chapter 04 has no URL to anchor, so say why rather than looking broken.
         addLog('warn', 'no public web sources returned for this face')
       }
     } catch (err) {
@@ -162,7 +153,7 @@ export function usePipeline() {
     } finally {
       setSearching(false)
     }
-  }, [addLog, detected, provider, setStep])
+  }, [addLog, detected, setStep])
 
   /** Hash the chosen match and write the digest into Sepolia calldata. */
   const runAnchor = useCallback(async () => {
@@ -178,9 +169,13 @@ export function usePipeline() {
       v: 1,
       identity: result.identity,
       confidence: result.confidence,
-      provider: result.provider ?? 'gemini',
+      provider: result.provider ?? 'google_lens',
       match: { title: selected.title, url: selected.url },
       faceScore: Number(detected.face.score.toFixed(4)),
+      // The digest binds both ends of the pipeline: this exact crop produced this exact
+      // match. Without it the anchor only commits to the page that was found, and nothing
+      // ties that page back to the face that went looking for it.
+      imageHash: result.imageHash,
       capturedAt: new Date().toISOString(),
     }
 
@@ -279,8 +274,6 @@ export function usePipeline() {
     onDetected,
     resetDownstream,
     // search
-    provider,
-    setProvider,
     searching,
     result,
     selected,

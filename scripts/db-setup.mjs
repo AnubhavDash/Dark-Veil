@@ -50,7 +50,7 @@ const DDL = [
     'search_cache',
     `CREATE TABLE IF NOT EXISTS search_cache (
        image_hash  text PRIMARY KEY,
-       provider    text NOT NULL DEFAULT 'gemini',
+       provider    text NOT NULL DEFAULT 'google_lens',
        result      jsonb NOT NULL,
        created_at  timestamptz NOT NULL DEFAULT now()
      )`,

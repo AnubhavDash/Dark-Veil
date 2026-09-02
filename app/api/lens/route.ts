@@ -8,10 +8,10 @@ import { configuredVendors, isLoopback, lensSearch } from '@/lib/lens'
 export const maxDuration = 60
 
 /**
- * Optional path: true reverse image search via Google Lens, through SearchApi.io with SerpApi
- * as the fallback. Works on any face that appears on the public web — no "public figure"
- * policy gate, and no hallucination surface, since the URLs come from Google rather than a
- * model. The crop is hosted briefly at /api/img/[hash] so Lens can fetch it by URL.
+ * The only reverse image search in the app: Google Lens, through SearchApi.io with SerpApi as
+ * the fallback. Works on any face that appears on the public web — no "public figure" policy
+ * gate, and no hallucination surface, since the URLs come from Google rather than a model.
+ * The crop is hosted briefly at /api/img/[hash] so Lens can fetch it by URL.
  */
 export async function POST(req: Request) {
   if (configuredVendors().length === 0) {
@@ -42,7 +42,9 @@ export async function POST(req: Request) {
       .from(searchCache)
       .where(eq(searchCache.imageHash, `lens:${imageHash}`))
       .limit(1)
-    if (hit) return NextResponse.json({ ...hit.result, cached: true })
+    // imageHash is spread in after the cached body so rows written before that field
+    // existed still answer with it.
+    if (hit) return NextResponse.json({ ...hit.result, imageHash, cached: true })
   } catch (err) {
     console.error('[lens] cache read failed', err)
   }
@@ -58,7 +60,7 @@ export async function POST(req: Request) {
       {
         error:
           `Google Lens has to fetch the crop from ${imageUrl}, which is not reachable from the ` +
-          `internet. Deploy the app, or expose it with a tunnel, to use the Lens provider.`,
+          `internet. Deploy the app, or expose it with a tunnel, to run the reverse image search.`,
       },
       { status: 409 },
     )
@@ -78,6 +80,7 @@ export async function POST(req: Request) {
     identity: lookup.matches.length ? 'Visual matches found' : 'No visual matches',
     matches: lookup.matches,
     imageUrl,
+    imageHash,
   }
 
   try {

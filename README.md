@@ -14,17 +14,17 @@ photo/webcam ──► face-api (in browser) ──► 128-d embedding
                                    └──► Google Lens (SearchApi / SerpApi)
                                                     │  real URLs
                                                     ▼
-                                        Gemini vision names the face ──► chosen match
-                                                                              │
-             canonical JSON ──► keccak256 ──► Sepolia tx calldata ◄────────────┘
+                                             chosen match
+                                                    │
+             canonical JSON ──► keccak256 ──► Sepolia tx calldata ◄┘
                                                    │
                           re-read calldata ──► compare ──► /proof/<txHash>
 ```
 
-Citations come from Lens, never from the model. That ordering is the point: a model shown a
+Citations come from Lens, never from a model. That ordering is the point: a model shown a
 face will guess a name and then look for pages that agree with its guess, which is how
-confident fabrications about real people get made. Lens matches the pixels, so the URLs exist
-before any model sees them.
+confident fabrications about real people get made. Lens matches the pixels, so the URLs are
+pages Google found carrying this image — there is no step where a name gets invented.
 
 ## The five chapters
 
@@ -32,7 +32,7 @@ before any model sees them.
 |---|---------|----------------------|
 | 01 | Capture | TinyFaceDetector at 224px drives a ~10 fps HUD; eye-aspect-ratio blink detection fires the shutter; the captured still gets a full 416px pass with landmarks and descriptors for every face |
 | 02 | Encode | The 128-d embedding is drawn as a 16×8 heatmap; enrol it in Neon and match later faces against the gallery by Euclidean distance (threshold 0.6) |
-| 03 | Search | The crop — and only the crop — goes to Google Lens for a real reverse image lookup, then Gemini reads the crop plus those pages and names the person; results are cached in Neon by sha256 of the image so repeat runs cost nothing |
+| 03 | Search | The crop — and only the crop — goes to Google Lens for a real reverse image lookup; results are cached in Neon by sha256 of the image so repeat runs cost nothing. Google fetches the crop itself, so this needs a public origin |
 | 04 | Anchor | Record → canonical JSON → keccak256 → Sepolia calldata; the tamper button edits one field and re-verifies so you can watch the check fail |
 | 05 | Proof | Every anchor gets a permanent page that re-reads the chain on each visit, with a QR code so another device can confirm it independently |
 
@@ -40,9 +40,8 @@ before any model sees them.
 
 - Node 20+ and pnpm (or npm)
 - A Neon Postgres database
-- A Google AI Studio API key
 - A Sepolia RPC URL and a throwaway wallet with a little Sepolia ETH
-- For real citations: a SearchApi.io key, a SerpApi key, or both
+- A SearchApi.io key, a SerpApi key, or both — chapter 03 does not run without one
 
 ## Setup
 
@@ -63,11 +62,10 @@ cp .env.example .env.local
 | Variable | Required | What it is |
 |----------|----------|------------|
 | `DATABASE_URL` | yes | Neon **pooled** connection string. Enrollments, the anchor registry, the search cache and the Lens image host all live here. |
-| `GEMINI_API_KEY` | yes | [Google AI Studio](https://aistudio.google.com/apikey) key. Names the face. Grounding is a **paid** feature on Gemini 3.x — the free tier lists it as "Not available" — so the route probes once, logs the fallback and continues ungrounded. Enabling billing later needs no code change. |
 | `SEPOLIA_RPC_URL` | yes | Any Sepolia JSON-RPC endpoint. `https://ethereum-sepolia-rpc.publicnode.com` is free and needs no signup; Infura or Alchemy are steadier under load. Used for reads *and* for broadcasting anchors. |
 | `WALLET_PRIVATE_KEY` | yes | Private key of a **throwaway** wallet with a little Sepolia ETH. It signs the anchor transactions. Never point this at a key holding real funds. `npm run wallet:new` generates one into `.env.local` without printing it, then fund the address it shows from the [Google Cloud faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia) — unlike Alchemy's and Chainstack's, it does not require a mainnet ETH balance. |
-| `SEARCHAPI_KEY` | no | [SearchApi.io](https://www.searchapi.io/) key — 100 credits, one time. First choice for the Lens lookup. |
-| `SERPAPI_KEY` | no | [SerpApi](https://serpapi.com/) key — 250 searches/month, resets. Used when SearchApi is missing or errors, so one exhausted vendor does not take chapter 03 down. |
+| `SEARCHAPI_KEY` | one of these two | [SearchApi.io](https://www.searchapi.io/) key — 100 credits, one time. First choice for the Lens lookup. |
+| `SERPAPI_KEY` | one of these two | [SerpApi](https://serpapi.com/) key — 250 searches/month, resets. Used when SearchApi is missing or errors, so one exhausted vendor does not take chapter 03 down. |
 | `NEXT_PUBLIC_SITE_URL` | no | Canonical origin for Open Graph image URLs. Inferred on Vercel; set it for a custom domain or self-hosting. |
 
 Missing keys fail readably rather than silently: every route that needs a variable returns a
@@ -75,22 +73,16 @@ JSON error naming it, and the message surfaces in the status log. Detection and
 encoding never leave the browser, so chapter 01 works with no keys at all and chapter 02 needs
 only `DATABASE_URL`.
 
-### Where citations come from, and when there are none
-
-Chapter 03 reports which of three modes produced a result, because they are not equally
-trustworthy:
-
-| Mode | Citations | When |
-|------|-----------|------|
-| `evidence` | Real Lens URLs | A public origin with at least one Lens key — the normal path |
-| `grounded` | Gemini's own Search citations | Only if the Gemini key has billing enabled |
-| `vision` | **None** | No Lens key, or a loopback origin |
+### Why chapter 03 needs a deployed origin
 
 Google fetches the crop from `/api/img/<hash>` itself, so **Lens cannot work on `localhost`** —
-`/api/lens` returns 409 naming the unreachable URL before spending a credit, and `/api/search`
-drops to `vision`. In that mode the model is told it has no web access and must emit no URLs,
-so you get a name with nothing to click. That also means chapter 04 has no match URL to anchor
-locally. Deploy, or run a tunnel, to exercise 03 through 05 end to end.
+`/api/lens` returns 409 naming the unreachable URL before spending a credit, and the status log
+shows that message. That also means chapter 04 has no match URL to anchor locally. Deploy, or
+run a tunnel, to exercise 03 through 05 end to end.
+
+A Lens lookup that succeeds with zero matches is believed rather than papered over: "Google has
+never indexed this image" is the ordinary answer for an ordinary face, and the panel says so
+instead of producing a name from nowhere.
 
 ### 3. Database
 
@@ -135,7 +127,7 @@ CREATE TABLE IF NOT EXISTS lens_images (
 
 CREATE TABLE IF NOT EXISTS search_cache (
   image_hash  text PRIMARY KEY,
-  provider    text NOT NULL DEFAULT 'gemini',
+  provider    text NOT NULL DEFAULT 'google_lens',
   result      jsonb NOT NULL,
   created_at  timestamptz NOT NULL DEFAULT now()
 );
@@ -156,6 +148,21 @@ npm start
 The webcam needs a secure context. `localhost` counts; a LAN IP does not — use HTTPS or a
 tunnel if you want to test the blink capture from a phone.
 
+## Which blockchain
+
+**Ethereum Sepolia** — the public proof-of-stake testnet, chain ID 11155111. Reads and writes
+both go through `SEPOLIA_RPC_URL`, transactions are signed locally from `WALLET_PRIVATE_KEY`,
+and every anchor is visible on [sepolia.etherscan.io](https://sepolia.etherscan.io).
+
+No contract is deployed and nothing is stored on chain but the digest. An anchor is a 0-value
+transaction from the signing wallet to its own address whose **calldata** is the 32-byte
+keccak256 hash — the cheapest write on Ethereum that is still permanent, publicly readable and
+timestamped by consensus. A faucet drip covers hundreds of runs.
+
+Sepolia rather than mainnet because the demonstration is byte-for-byte identical and the ETH is
+free; pointing the same code at mainnet is one environment variable. What that choice costs is
+in [Known limitations](#known-limitations).
+
 ## How the proof works
 
 The anchored record is a plain object:
@@ -165,12 +172,18 @@ The anchored record is a plain object:
   "v": 1,
   "identity": "…",
   "confidence": "…",
-  "provider": "gemini",
+  "provider": "google_lens",
   "match": { "title": "…", "url": "https://…" },
   "faceScore": 0.98,
+  "imageHash": "e3b0c44298fc1c14…",
   "capturedAt": "2026-01-01T00:00:00.000Z"
 }
 ```
+
+`imageHash` is the sha256 of the exact crop bytes that were searched — the same hash the crop
+was hosted under at `/api/img/<hash>`. It is what makes the anchor bind *both* ends of the
+pipeline: without it the digest only commits to the page that was found, and nothing ties that
+page back to the face that went looking for it.
 
 `canonicalize()` in `lib/chain.ts` serialises it with sorted keys so the same record always
 produces the same bytes, then `keccak256(toUtf8Bytes(...))` gives a 32-byte digest. That
@@ -190,8 +203,7 @@ invert their success semantics in tamper mode so a mismatch reads as green.
 
 | Route | Purpose |
 |-------|---------|
-| `POST /api/search` | Lens supplies the URLs, Gemini names the face; caches by sha256 of the crop |
-| `POST /api/lens` | Raw Google Lens reverse image search — SearchApi first, SerpApi as fallback |
+| `POST /api/lens` | Google Lens reverse image search — SearchApi first, SerpApi as fallback; caches by sha256 of the crop |
 | `GET /api/img/[hash]` | Serves a stored crop so Google Lens can fetch it by URL |
 | `POST /api/enroll` | Store a name + 128-d descriptor + 160px thumbnail |
 | `POST /api/match` | Rank the gallery against a descriptor by Euclidean distance |
@@ -200,6 +212,43 @@ invert their success semantics in tamper mode so a mismatch reads as green.
 | `GET /api/proof/[txHash]` | Everything a proof page needs, verified server-side |
 | `GET /api/registry` | Recent anchors for the registry list |
 | `GET /api/block` | Latest Sepolia block for the header ticker |
+
+## Known limitations
+
+- **Chapter 03 cannot run on `localhost`.** Google fetches the crop from `/api/img/<hash>`
+  itself, so the origin has to be reachable from the internet. `/api/lens` returns 409 naming
+  the URL it could not reach rather than spending a vendor credit. Deploy, or tunnel.
+- **Lens only finds images Google has already indexed.** A face that has never been posted
+  publicly comes back with zero matches, and that is the ordinary outcome rather than a
+  failure — nothing is invented to fill the gap. It does mean chapter 04 has no URL to anchor
+  for such a face.
+- **Results are web pages, not specifically social media posts.** Whatever Lens returns is what
+  you get; there is no domain filter and no per-platform ranking, so a run can come back with
+  news, blog or stock-photo pages and no social profile among them.
+- **Nothing here asserts a name.** `identity` in the record is a status — `Visual matches
+  found` or `No visual matches`. Any actual name lives in the matched page's own title, put
+  there by whoever published it. There is deliberately no step that infers who someone is.
+- **The anchor proves integrity, not truth.** It shows this record existed in exactly this form
+  at this block height, signed by this key. It says nothing about whether the match is the
+  right person, and anyone can anchor anything.
+- **One wallet signs every anchor.** Whoever holds `WALLET_PRIVATE_KEY` can write records
+  indistinguishable from the app's own. Use a throwaway key with nothing but faucet ETH.
+- **Sepolia is a testnet.** Its history carries no guarantee as long-lived as mainnet's —
+  testnets do get deprecated. The permanence claim is only as strong as the network you point
+  the code at.
+- **Detection is tuned for speed.** TinyFaceDetector at 224px for the live HUD and 416px for
+  the still misses profile views, heavy occlusion and low light. Error rates for face
+  embeddings are also known to vary across demographic groups; nothing here corrects for that.
+- **Blink liveness stops a photograph, not a replay.** Holding up a still image fails the
+  eye-aspect-ratio check. Playing a video of someone blinking does not.
+- **Chapter 02 is a side exhibit.** Its gallery holds only faces you enrolled yourself, so it
+  cannot identify a stranger, and chapters 03–05 never read from it. Enrollment stores a 160px
+  thumbnail alongside the descriptor.
+- **Searches are cached by image sha256.** Re-running an identical crop returns the stored
+  answer instead of a fresh lookup — cheap, but it means the cache and not Google is what
+  answered. Delete the `search_cache` row to force a real search.
+- **Model weights load from jsDelivr at runtime.** No network on first load means no detection.
+  Vendor them into `public/` for offline use.
 
 ## Notes for anyone editing this
 

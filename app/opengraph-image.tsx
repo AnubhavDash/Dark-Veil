@@ -62,7 +62,7 @@ export default async function Image() {
         </div>
 
         <div style={{ display: 'flex', marginTop: '52px', gap: '14px' }}>
-          {['face-api · 128-d', 'gemini + lens', 'keccak256 → sepolia'].map((chip) => (
+          {['face-api · 128-d', 'google lens', 'keccak256 → sepolia'].map((chip) => (
             <div
               key={chip}
               style={{

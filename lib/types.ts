@@ -1,4 +1,10 @@
-export type SearchProvider = 'gemini' | 'google_lens'
+/**
+ * One path only: a real Google Lens reverse image lookup. There used to be a second
+ * provider that put a vision model in front of these citations, which meant the panel
+ * offered a choice between "URLs Google found" and "URLs Google found, plus a name a
+ * model guessed" — and the second one could answer with no citations at all.
+ */
+export type SearchProvider = 'google_lens'
 
 export type Source = {
   url: string
@@ -17,14 +23,9 @@ export type SearchResult = {
   raw: string
   sources: Source[]
   provider?: SearchProvider
-  /**
-   * How the citations were obtained. `grounded` is Gemini's own Search tool (paid tier only),
-   * `evidence` is Gemini reasoning over real Google Lens matches, `vision` is the crop alone
-   * with no web access — which is honest but uncitable, so `sources` is empty.
-   */
-  mode?: 'grounded' | 'evidence' | 'vision'
-  cached?: boolean
+  /** sha256 of the crop that was searched — anchored so the record binds both ends. */
   imageHash?: string
+  cached?: boolean
 }
 
 export type LensMatch = { title: string; url: string; source: string; thumbnail?: string }
@@ -35,6 +36,8 @@ export type LensResult = {
   identity: string
   matches: LensMatch[]
   imageUrl: string
+  /** sha256 of the exact crop bytes Lens was pointed at. */
+  imageHash: string
   cached?: boolean
 }
 

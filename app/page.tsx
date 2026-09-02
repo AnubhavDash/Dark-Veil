@@ -180,13 +180,11 @@ export default function Page() {
         index="03"
         kicker="chapter three"
         title="Find them on the live web"
-        blurb="Only now does the crop leave the browser. Google Lens does the actual looking — a reverse image search that finds pages containing this exact face, not only well-known people — and Gemini reads the crop alongside those pages to put a name to it. The citations are Google's, not the model's, so there is nothing for it to invent."
+        blurb="Only now does the crop leave the browser. Google Lens does the looking — a real reverse image search that finds pages carrying this exact face, not only well-known people. Every link comes back from Google itself, so there is no model in the loop and nothing for one to invent. Google has to fetch the crop from this origin to do it, which is why the search runs on the deployed site and not on localhost."
       >
         <HudPanel className="p-5">
           <SearchPanel
             crop={p.detected?.crop ?? null}
-            provider={p.provider}
-            onProvider={p.setProvider}
             searching={p.searching}
             result={p.result}
             selected={p.selected}
@@ -256,7 +254,7 @@ export default function Page() {
       <footer className="border-t border-primary/10 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4 text-center sm:px-6">
           <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground/60">
-            face-api in-browser · google lens · gemini vision · ethereum sepolia
+            face-api in-browser · google lens · ethereum sepolia
           </p>
           <p className="max-w-xl text-xs leading-relaxed text-muted-foreground/50">
             A demonstration of how little friction stands between a photograph and a name. Use it

@@ -46,7 +46,7 @@ export function MatchResults({
 
       <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
         <Globe className="h-3.5 w-3.5 text-primary" />
-        {result.sources.length} {result.provider === 'google_lens' ? 'visual' : 'grounded web'} source
+        {result.sources.length} visual source
         {result.sources.length === 1 ? '' : 's'}
         {result.cached && (
           <span className="rounded border border-border px-1.5 py-px text-3xs text-muted-foreground/70">

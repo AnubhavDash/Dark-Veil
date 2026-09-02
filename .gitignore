@@ -16,3 +16,7 @@ node_modules
 tsconfig.tsbuildinfo
 dv.zip
 .neon
+.vercel
+.env*
+# …but the value-free template has to stay committable.
+!.env.example

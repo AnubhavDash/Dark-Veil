@@ -41,13 +41,12 @@ export const metadata: Metadata = {
     template: '%s',
   },
   description:
-    'Detect a face in the browser, find real public matches on the live web with Gemini or Google Lens, then anchor and re-verify the result on the Ethereum Sepolia blockchain.',
+    'Detect a face in the browser, find real public matches on the live web with Google Lens, then anchor and re-verify the result on the Ethereum Sepolia blockchain.',
   applicationName: 'Dark Veil',
   keywords: [
     'face recognition',
     'face-api',
     'reverse image search',
-    'Gemini',
     'Google Lens',
     'Ethereum',
     'Sepolia',

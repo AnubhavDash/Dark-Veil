@@ -7,7 +7,7 @@ import type { StepId, StepState } from '@/lib/types'
 const STEPS: { id: StepId; label: string; hint: string }[] = [
   { id: 'scan', label: 'Capture', hint: 'Upload or webcam' },
   { id: 'detect', label: 'Detect', hint: 'Face encoding' },
-  { id: 'search', label: 'Web Search', hint: 'Lens + Gemini' },
+  { id: 'search', label: 'Web Search', hint: 'Google Lens' },
   { id: 'anchor', label: 'Anchor', hint: 'Write to Sepolia' },
   { id: 'verify', label: 'Verify', hint: 'Re-read from chain' },
 ]

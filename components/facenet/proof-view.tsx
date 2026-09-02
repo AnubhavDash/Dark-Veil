@@ -69,7 +69,7 @@ export function ProofView({ txHash }: { txHash: string }) {
 
   if (error) {
     return (
-      <HudPanel className="p-6" glow="none">
+      <HudPanel className="p-6">
         <div className="flex items-center gap-2 text-destructive">
           <ShieldAlert className="h-5 w-5" />
           <span className="font-semibold">No proof for this transaction</span>
@@ -92,10 +92,7 @@ export function ProofView({ txHash }: { txHash: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <HudPanel
-        className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center"
-        glow={verdict === 'verified' ? 'cyan' : 'none'}
-      >
+      <HudPanel className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
         <div
           className={cn(
             'flex items-center gap-3',
@@ -144,7 +141,7 @@ export function ProofView({ txHash }: { txHash: string }) {
       </HudPanel>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <HudPanel className="flex flex-col gap-3 p-5 lg:col-span-2" glow="none">
+        <HudPanel className="flex flex-col gap-3 p-5 lg:col-span-2">
           <h2 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             anchored record
           </h2>
@@ -164,7 +161,7 @@ export function ProofView({ txHash }: { txHash: string }) {
           </div>
         </HudPanel>
 
-        <HudPanel className="flex flex-col items-center justify-center gap-3 p-5" glow="none">
+        <HudPanel className="flex flex-col items-center justify-center gap-3 p-5">
           <div className="rounded-lg bg-white p-3">
             <QRCodeSVG value={url || proof.explorerUrl} size={132} level="M" marginSize={0} />
           </div>
@@ -174,7 +171,7 @@ export function ProofView({ txHash }: { txHash: string }) {
         </HudPanel>
       </div>
 
-      <HudPanel className="flex flex-col gap-4 p-5" glow="none">
+      <HudPanel className="flex flex-col gap-4 p-5">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <h2 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             hash comparison
@@ -212,7 +209,7 @@ export function ProofView({ txHash }: { txHash: string }) {
         </p>
       </HudPanel>
 
-      <HudPanel className="flex flex-col gap-3 p-5" glow="none">
+      <HudPanel className="flex flex-col gap-3 p-5">
         <h2 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
           canonical json · the exact bytes that were hashed
         </h2>

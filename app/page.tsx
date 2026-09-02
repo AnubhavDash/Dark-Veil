@@ -134,7 +134,7 @@ export default function Page() {
               disabled={p.busy}
             />
           </HudPanel>
-          <HudPanel className="p-5 lg:col-span-5" glow="none">
+          <HudPanel className="p-5 lg:col-span-5">
             <h3 className="mb-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">
               pipeline
             </h3>
@@ -153,7 +153,7 @@ export default function Page() {
         {descriptor ? (
           <div className="flex flex-col gap-4">
             <Reveal>
-              <HudPanel className="p-5" glow="magenta">
+              <HudPanel className="p-5">
                 <EmbeddingHeatmap descriptor={descriptor} />
               </HudPanel>
             </Reveal>
@@ -167,7 +167,7 @@ export default function Page() {
             </Reveal>
           </div>
         ) : (
-          <HudPanel className="p-8 text-center" glow="none">
+          <HudPanel className="p-8 text-center">
             <p className="text-sm text-muted-foreground">
               Capture a face in chapter 01 and its embedding appears here.
             </p>
@@ -182,7 +182,7 @@ export default function Page() {
         title="Find them on the live web"
         blurb="Only now does the crop leave the browser. Google Lens does the actual looking — a reverse image search that finds pages containing this exact face, not only well-known people — and Gemini reads the crop alongside those pages to put a name to it. The citations are Google's, not the model's, so there is nothing for it to invent."
       >
-        <HudPanel className="p-5" glow="magenta">
+        <HudPanel className="p-5">
           <SearchPanel
             crop={p.detected?.crop ?? null}
             provider={p.provider}
@@ -220,7 +220,7 @@ export default function Page() {
             />
           </HudPanel>
         ) : (
-          <HudPanel className="p-8 text-center" glow="none">
+          <HudPanel className="p-8 text-center">
             <p className="text-sm text-muted-foreground">
               Run the search in chapter 03 and pick a source to unlock anchoring.
             </p>
@@ -235,7 +235,7 @@ export default function Page() {
         title="Anyone can check the receipt"
         blurb="Every anchor gets a permanent page that re-reads Sepolia on each visit and shows the exact bytes that were hashed. Scan the QR from another device and it verifies there too — the proof does not depend on this site staying online, only on the transaction existing."
       >
-        <HudPanel className="p-5" glow="none">
+        <HudPanel className="p-5">
           <Registry version={p.registryVersion} limit={12} />
           <a
             href="/registry"
@@ -247,7 +247,7 @@ export default function Page() {
       </Chapter>
       <section id="log" className="scroll-mt-24 border-t border-primary/10 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <HudPanel className="h-64 overflow-hidden p-0" glow="none">
+          <HudPanel className="h-64 overflow-hidden p-0">
             <StatusLog lines={p.log} />
           </HudPanel>
         </div>

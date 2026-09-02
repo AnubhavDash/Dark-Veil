@@ -23,7 +23,7 @@ export default function RegistryPage() {
         </p>
       </header>
 
-      <HudPanel className="p-5" glow="none">
+      <HudPanel className="p-5">
         <Registry />
       </HudPanel>
 

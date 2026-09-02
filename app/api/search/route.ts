@@ -12,8 +12,10 @@ const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 })
 
-// Prefer the model the user confirmed has Search grounding, fall back if rate-limited.
-const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-2.5-pro']
+// Newest first, falling back when a model is rate-limited or unavailable. Verified present
+// on a current API key — the 2.5 family that used to head this list now answers "no longer
+// available to new users" and is scheduled to shut down entirely in October 2026.
+const MODELS = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash']
 
 type Source = { url: string; title: string }
 

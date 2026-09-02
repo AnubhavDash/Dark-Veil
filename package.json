@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "db:setup": "node scripts/db-setup.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.62",

@@ -69,7 +69,14 @@ only `DATABASE_URL`.
 
 ### 3. Database
 
-The four tables have no migration runner — paste this into the Neon SQL editor once:
+With `DATABASE_URL` in place, create the four tables:
+
+```bash
+npm run db:setup
+```
+
+It is idempotent — every statement is `IF NOT EXISTS`, so re-running just reports the row
+counts. If you would rather not run a script, paste this into the Neon SQL editor instead:
 
 ```sql
 CREATE TABLE IF NOT EXISTS enrollments (

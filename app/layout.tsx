@@ -15,12 +15,23 @@ const mono = JetBrains_Mono({
   display: 'swap',
 })
 
-/** Absolute base for OG/Twitter image URLs. Vercel sets the production host for us. */
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : 'http://localhost:3000')
+/**
+ * Absolute base for OG/Twitter image URLs. Vercel exposes the production host for us.
+ * Env vars that exist but are blank are treated as unset — `??` would let `''` through and
+ * `new URL('')` throws at module evaluation, which takes the whole build down. A bare host
+ * with no scheme is accepted too, since that is the easy mistake to make here.
+ */
+function resolveSiteUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim()
+  if (explicit) return /^https?:\/\//.test(explicit) ? explicit : `https://${explicit}`
+
+  const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim()
+  if (vercelHost) return `https://${vercelHost}`
+
+  return 'http://localhost:3000'
+}
+
+const siteUrl = resolveSiteUrl()
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

@@ -30,7 +30,7 @@ const initialSteps: Record<StepId, StepState> = {
 /** Reshapes a Google Lens payload into the same view model the Gemini panel renders. */
 function lensToSearch(r: LensResult): SearchResult {
   return {
-    model: 'google lens · searchapi',
+    model: `google lens · ${r.vendor ?? 'searchapi'}`,
     identity: r.identity,
     confidence: r.matches.length ? 'Visual' : 'Low',
     summary: `Reverse image search returned ${r.matches.length} visual match${
@@ -44,6 +44,7 @@ function lensToSearch(r: LensResult): SearchResult {
       source: m.source,
     })),
     provider: 'google_lens',
+    mode: 'evidence',
     cached: r.cached,
   }
 }
@@ -125,8 +126,8 @@ export function usePipeline() {
     addLog(
       'info',
       lens
-        ? 'uploading crop and querying Google Lens (SearchApi) for visual matches…'
-        : 'querying Gemini vision + Google Search grounding…',
+        ? 'uploading crop and querying Google Lens for visual matches…'
+        : 'querying Gemini vision, with Google Lens supplying the citations…',
     )
     try {
       const res = await fetch(lens ? '/api/lens' : '/api/search', {
@@ -145,6 +146,13 @@ export function usePipeline() {
       if (next.sources.length > 0) {
         setSelected(next.sources[0])
         addLog('info', `auto-selected top source: ${next.sources[0].url}`)
+      } else if (next.mode === 'vision') {
+        // Nothing was fabricated to fill the gap, which is the point — but it does mean
+        // chapter 04 has no URL to anchor, so say why rather than leaving it looking broken.
+        addLog(
+          'warn',
+          'no citations: this origin cannot be reached by Google, so the answer is from the crop alone',
+        )
       } else {
         addLog('warn', 'no public web sources returned for this face')
       }

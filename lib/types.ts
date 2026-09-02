@@ -17,6 +17,12 @@ export type SearchResult = {
   raw: string
   sources: Source[]
   provider?: SearchProvider
+  /**
+   * How the citations were obtained. `grounded` is Gemini's own Search tool (paid tier only),
+   * `evidence` is Gemini reasoning over real Google Lens matches, `vision` is the crop alone
+   * with no web access — which is honest but uncitable, so `sources` is empty.
+   */
+  mode?: 'grounded' | 'evidence' | 'vision'
   cached?: boolean
   imageHash?: string
 }
@@ -24,6 +30,8 @@ export type SearchResult = {
 export type LensMatch = { title: string; url: string; source: string; thumbnail?: string }
 export type LensResult = {
   provider: 'google_lens'
+  /** Which scraper vendor actually answered — they are tried in order until one does. */
+  vendor?: 'searchapi' | 'serpapi'
   identity: string
   matches: LensMatch[]
   imageUrl: string

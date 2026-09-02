@@ -30,7 +30,7 @@ pages Google found carrying this image — there is no step where a name gets in
 
 | Stage | What actually runs | Code |
 |-------|--------------------|------|
-| Face scan input | Webcam or dropped file → TinyFaceDetector, eye-aspect-ratio blink liveness, landmarks, a 128-d descriptor, and a padded crop — all in the browser | `lib/face.ts`, `components/facenet/scanner.tsx` |
+| Face scan input | Webcam or dropped file → an escalating detector cascade, eye-aspect-ratio blink liveness, landmarks, a 128-d descriptor, and a padded crop — all in the browser | `lib/face.ts`, `components/facenet/scanner.tsx` |
 | Web / social search | The crop is hosted at a public URL, then Google Lens is queried through SearchApi with SerpApi behind it. Every result is a URL Google returned for those pixels | `lib/lens.ts`, `app/api/lens/route.ts`, `app/api/img/[hash]/route.ts` |
 | Blockchain record | Chosen match → canonical JSON → keccak256 → the calldata of a real 0-value Sepolia transaction | `lib/chain.ts`, `app/api/anchor/route.ts` |
 | Re-verification | Re-read that calldata from the chain, re-hash the stored record locally, compare all three hashes | `app/api/verify/route.ts`, `app/api/proof/[txHash]/route.ts` |
@@ -54,11 +54,47 @@ install, no keys.
 
 | # | Chapter | What actually happens |
 |---|---------|----------------------|
-| 01 | Capture | TinyFaceDetector at 224px drives a ~10 fps HUD; eye-aspect-ratio blink detection fires the shutter; the captured still gets a full 416px pass with landmarks and descriptors for every face |
+| 01 | Capture | TinyFaceDetector at 224px drives a ~10 fps HUD; eye-aspect-ratio blink detection fires the shutter; the captured still goes through the detection cascade below, with landmarks and descriptors for every face |
 | 02 | Encode | The 128-d embedding is drawn as a 16×8 heatmap; hover a cell to read that dimension's exact value. Two photos of the same person produce visibly similar tiles |
 | 03 | Search | The crop — and only the crop — goes to Google Lens for a real reverse image lookup; results are cached in Neon by sha256 of the image so repeat runs cost nothing. Google fetches the crop itself, so this needs a public origin |
 | 04 | Anchor | Record → canonical JSON → keccak256 → Sepolia calldata; the tamper button edits one field and re-verifies so you can watch the check fail |
 | 05 | Proof | Every anchor gets a permanent page that re-reads the chain on each visit, with a QR code so another device can confirm it independently |
+
+### When the first pass misses
+
+TinyFaceDetector at 416px is fast and handles an ordinary well-lit photo, but it gives up on
+grain, dim light, low contrast and faces that sit small in a wide frame. Rather than answer
+"no face detected" there, `detectFaces()` escalates — five passes, cheapest first, stopping at
+the first that finds something, so a photo that works immediately pays nothing for the rest:
+
+| # | Pass | For |
+|---|------|-----|
+| 1 | TinyFaceDetector, 416px, score ≥ 0.4 | ordinary photos — the only pass most images touch |
+| 2 | TinyFaceDetector, 800px, score ≥ 0.25 | faces that are small in frame, or slightly washed out |
+| 3 | SSD MobileNet v1, confidence ≥ 0.25 | grain, dim light, off-angle heads — 5.6 MB, fetched once and only if needed |
+| 4 | SSD MobileNet v1 at 0.2 over a contrast-stretched copy | frames using a fraction of the brightness range |
+| 5 | SSD MobileNet v1 at 0.2 over a denoised, contrast-stretched copy | dim *and* grainy webcam frames, where stretching alone amplifies the noise |
+
+The status log names the pass that succeeded. Measured against the same face crop degraded
+five ways — one pass at 416px versus the cascade:
+
+| Frame | Single 416px pass | Cascade |
+|-------|-------------------|---------|
+| unmodified | found | found · pass 1 |
+| dimmed to 60%, light grain | found | found · pass 1 |
+| dimmed to 45%, medium grain | found | found · pass 1 |
+| dimmed to 28% | **missed** | found · pass 2 |
+| black and white, contrast squeezed to a 76-value band | **missed** | found · pass 4 |
+| face at 14% of a 1600px frame | **missed** | found · pass 2 |
+| dimmed to 30% *and* heavy grain (mean luminance 18/255) | **missed** | **missed** |
+
+The last row is the honest floor: at that point the noise is as large as the signal, and a
+detector that claims a face there is guessing. Dropping the threshold to 0.1 does produce
+"detections" — five of them on a clean single-face crop, which is what fitting noise looks
+like — so the cascade stops rather than invent one.
+
+The live webcam loop escalates too, on the same principle: it runs at 224px, and if it finds
+nothing for half a second it switches to 320px over a denoised, contrast-stretched frame.
 
 ## Requirements
 
@@ -260,9 +296,16 @@ invert their success semantics in tamper mode so a mismatch reads as green.
 - **Sepolia is a testnet.** Its history carries no guarantee as long-lived as mainnet's —
   testnets do get deprecated. The permanence claim is only as strong as the network you point
   the code at.
-- **Detection is tuned for speed.** TinyFaceDetector at 224px for the live HUD and 416px for
-  the still misses profile views, heavy occlusion and low light. Error rates for face
-  embeddings are also known to vary across demographic groups; nothing here corrects for that.
+- **Detection has a floor.** The cascade in [When the first pass misses](#when-the-first-pass-misses)
+  recovers dim, low-contrast, black-and-white and small-in-frame faces that a single pass drops,
+  but a frame that is both very dark and heavily grained stays undetected, and so do profile
+  views and heavy occlusion. Error rates for face embeddings are also known to vary across
+  demographic groups; nothing here corrects for that.
+- **A recovered face gets a worse embedding.** Passes 4 and 5 detect on a contrast-stretched
+  (and, in pass 5, blurred) copy, so the 128-d vector for such a face is computed from
+  processed pixels. The crop sent to Lens is always cut from the untouched still, so only
+  chapter 02 is affected — but two photos of the same person will land further apart if one of
+  them needed the fallback.
 - **Blink liveness stops a photograph, not a replay.** Holding up a still image fails the
   eye-aspect-ratio check. Playing a video of someone blinking does not.
 - **The enrol/match gallery is not part of the pipeline.** `/api/enroll` and `/api/match` still
@@ -274,7 +317,8 @@ invert their success semantics in tamper mode so a mismatch reads as green.
   answer instead of a fresh lookup — cheap, but it means the cache and not Google is what
   answered. Delete the `search_cache` row to force a real search.
 - **Model weights load from jsDelivr at runtime.** No network on first load means no detection.
-  Vendor them into `public/` for offline use.
+  The three core models are ~7 MB and the fallback detector another 5.6 MB, fetched only the
+  first time a photo needs it. Vendor them into `public/` for offline use.
 
 ## Notes for anyone editing this
 
@@ -292,6 +336,13 @@ invert their success semantics in tamper mode so a mismatch reads as green.
   bootstrap scripts, and `'unsafe-eval'` is additionally allowed in development for the
   Turbopack refresh runtime. Tightening this means adopting nonces. `connect-src` is limited
   to self, jsDelivr (face-api weights) and Vercel vitals.
+- **Captured stills are capped at 1600px on the long edge** by `prepareStill()` before anything
+  looks at them. A 12-megapixel phone photo is 12.2M pixels to turn into a tensor and detects
+  no better than the 1.9M-pixel copy, because every pass resizes to 800px or less anyway. Files
+  go through `createImageBitmap` rather than a `FileReader` base64 round trip, and the webcam
+  shutter copies the frame straight into a canvas instead of encoding a full-resolution JPEG.
+  Boxes, crops and the on-screen stage all share the capped canvas's coordinate space, so
+  raising the cap is fine but detecting on one size and cropping from another is not.
 - Model weights are fetched from jsDelivr at runtime. Vendor them into `public/` if you need
   the app to work offline.
 

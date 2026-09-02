@@ -11,8 +11,10 @@ import {
   detectFaces,
   eyeAspectRatio,
   loadFaceModels,
+  prepareStill,
   trackFaces,
   type FaceResult,
+  type ImageSource,
   type TrackedFace,
 } from '@/lib/face'
 import {
@@ -151,35 +153,38 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
     })
   }, [])
 
-  /** Runs the full 416px pass over a captured still and hands the pick upstream. */
+  /** Runs the escalating detection cascade over a captured still and hands the pick upstream. */
   const process = useCallback(
-    async (dataUrl: string) => {
+    async (source: ImageSource, label: string) => {
       setBusy(true)
       onReset()
       setFaces([])
       setCrops([])
       setSelected(0)
       try {
-        const img = new Image()
-        img.crossOrigin = 'anonymous'
-        img.src = dataUrl
-        await img.decode()
-
-        const still = document.createElement('canvas')
-        still.width = img.naturalWidth
-        still.height = img.naturalHeight
-        still.getContext('2d')!.drawImage(img, 0, 0)
+        // Capped at 1600px: a 12-megapixel photo detects no better than this and costs
+        // seconds to turn into a tensor, which is most of what "upload is slow" was.
+        const still = prepareStill(source)
         stillRef.current = still
         setHasStill(true)
+        log('info', `${label} · detecting on a ${still.width}x${still.height} frame…`)
 
-        log('info', `running full detection pass on ${still.width}x${still.height} frame…`)
-        const found = await detectFaces(still)
+        // Let React mount the stage canvas so the photo is on screen while the cascade
+        // runs, instead of the panel sitting empty until detection finishes.
+        await new Promise((r) => setTimeout(r, 0))
+        renderStill([], 0)
+
+        const { faces: found, pass } = await detectFaces(still, (msg) => log('info', msg))
         renderStill(found, 0)
 
         if (found.length === 0) {
-          log('error', 'no face detected — try a clearer, front-facing photo')
+          log(
+            'error',
+            'no face found after five passes — more light, a straighter angle, or a photo where the face fills more of the frame will all help',
+          )
           return
         }
+        if (pass && pass !== 'tiny 416') log('warn', `found it on the fallback pass: ${pass}`)
 
         const nextCrops = found.map((f) => cropFace(still, f.box))
         setFaces(found)
@@ -215,14 +220,33 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
   )
 
   const handleFile = useCallback(
-    (file: File) => {
+    async (file: File) => {
       if (!file.type.startsWith('image/')) {
         log('error', 'unsupported file — please drop an image')
         return
       }
-      const reader = new FileReader()
-      reader.onload = () => process(reader.result as string)
-      reader.readAsDataURL(file)
+      const label = `${file.name} · ${(file.size / 1048576).toFixed(1)} MB`
+      try {
+        // createImageBitmap decodes off the main thread and skips the base64 round trip
+        // a FileReader forces. On an 8 MB phone photo that detour was seconds of the wait.
+        const bitmap = await createImageBitmap(file)
+        try {
+          await process(bitmap, label)
+        } finally {
+          bitmap.close()
+        }
+      } catch {
+        // Older Safari has no createImageBitmap for a Blob; the slow path still works.
+        const url = URL.createObjectURL(file)
+        try {
+          const img = new Image()
+          img.src = url
+          await img.decode()
+          await process(img, label)
+        } finally {
+          URL.revokeObjectURL(url)
+        }
+      }
     },
     [log, process],
   )
@@ -230,12 +254,10 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
   const capture = useCallback(() => {
     const video = videoRef.current
     if (!video || !video.videoWidth) return
-    const frame = document.createElement('canvas')
-    frame.width = video.videoWidth
-    frame.height = video.videoHeight
-    frame.getContext('2d')!.drawImage(video, 0, 0)
+    // Snapshot synchronously — the stream is torn down on the next line.
+    const frame = prepareStill(video)
     stopCam()
-    process(frame.toDataURL('image/jpeg', 0.92))
+    process(frame, 'webcam frame')
   }, [process, stopCam])
 
   captureRef.current = capture
@@ -281,6 +303,8 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
     if (!camActive) return
     let cancelled = false
     let timer: ReturnType<typeof setTimeout>
+    let misses = 0
+    let boosted = false
 
     const paint = (found: TrackedFace[], ear: number | null, closed: boolean) => {
       const video = videoRef.current
@@ -326,8 +350,20 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
 
       if (video && video.readyState >= 2 && video.videoWidth) {
         try {
-          const found = await trackFaces(video)
+          const found = await trackFaces(video, boosted)
           if (cancelled) return
+
+          // Half a second of empty frames means the cheap pass is not going to find
+          // this face: a dim or grainy camera needs the bigger, contrast-stretched one.
+          if (found.length === 0) {
+            misses += 1
+            if (misses === 5 && !boosted) {
+              boosted = true
+              log('info', 'no face at 224px — boosting the live pass (320px + contrast)')
+            }
+          } else {
+            misses = 0
+          }
 
           const ear = found[0] ? eyeAspectRatio(found[0].landmarks)?.avg ?? null : null
           let closed = eyePhaseRef.current === 'closed'

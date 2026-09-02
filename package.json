@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "db:setup": "node scripts/db-setup.mjs"
+    "db:setup": "node scripts/db-setup.mjs",
+    "wallet:new": "node scripts/new-wallet.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.62",

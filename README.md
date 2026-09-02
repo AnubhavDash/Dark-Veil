@@ -57,8 +57,8 @@ cp .env.example .env.local
 |----------|----------|------------|
 | `DATABASE_URL` | yes | Neon **pooled** connection string. Enrollments, the anchor registry, the search cache and the Lens image host all live here. |
 | `GEMINI_API_KEY` | yes | [Google AI Studio](https://aistudio.google.com/apikey) key. Drives the vision pass and the Search-grounded reverse lookup. |
-| `SEPOLIA_RPC_URL` | yes | Any Sepolia JSON-RPC endpoint (Infura, Alchemy, a public node). Used for reads *and* for broadcasting anchors. |
-| `WALLET_PRIVATE_KEY` | yes | Private key of a **throwaway** wallet with a little Sepolia ETH. It signs the anchor transactions. Never point this at a key holding real funds. Get test ETH from [sepoliafaucet.com](https://sepoliafaucet.com). |
+| `SEPOLIA_RPC_URL` | yes | Any Sepolia JSON-RPC endpoint. `https://ethereum-sepolia-rpc.publicnode.com` is free and needs no signup; Infura or Alchemy are steadier under load. Used for reads *and* for broadcasting anchors. |
+| `WALLET_PRIVATE_KEY` | yes | Private key of a **throwaway** wallet with a little Sepolia ETH. It signs the anchor transactions. Never point this at a key holding real funds. `npm run wallet:new` generates one into `.env.local` without printing it, then fund the address it shows from the [Google Cloud faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia) — unlike Alchemy's and Chainstack's, it does not require a mainnet ETH balance. |
 | `SERPAPI_KEY` | no | Enables the Google Lens provider. Without it the app runs Gemini-only and the Lens toggle reports the missing key. |
 | `NEXT_PUBLIC_SITE_URL` | no | Canonical origin for Open Graph image URLs. Inferred on Vercel; set it for a custom domain or self-hosting. |
 

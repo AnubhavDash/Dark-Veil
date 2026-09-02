@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Create the four tables FACENET needs, idempotently.
+ * Create the four tables Dark Veil needs, idempotently.
  *
  *   npm run db:setup
  *

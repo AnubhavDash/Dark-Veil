@@ -59,7 +59,7 @@ export default function Page() {
             onClick={() => scrollToSection('top')}
             className="font-mono text-sm font-bold uppercase tracking-[0.3em] text-primary"
           >
-            facenet
+            dark veil
           </button>
           <nav className="ml-auto hidden items-center gap-1 md:flex">
             {CHAPTERS.map((c, i) => (
@@ -90,7 +90,7 @@ export default function Page() {
         </span>
         <h1 className="text-5xl font-bold tracking-tight sm:text-7xl">
           <DecryptedText
-            text="FACENET"
+            text="DARK VEIL"
             animateOn="view"
             sequential
             speed={45}

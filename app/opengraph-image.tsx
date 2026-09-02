@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 
-export const alt = 'FACENET — detect a face, find it on the live web, anchor the proof on Ethereum Sepolia'
+export const alt = 'Dark Veil — detect a face, find it on the live web, anchor the proof on Ethereum Sepolia'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -50,7 +50,7 @@ export default async function Image() {
             color: '#f2f5fb',
           }}
         >
-          FACENET
+          DARK VEIL
         </div>
 
         <div style={{ display: 'flex', marginTop: '20px', fontSize: 34, lineHeight: 1.35, color: DIM, maxWidth: '900px' }}>

@@ -36,12 +36,12 @@ const siteUrl = resolveSiteUrl()
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'FACENET // Face → Web → Chain',
+    default: 'DARK VEIL // Face → Web → Chain',
     template: '%s',
   },
   description:
     'Detect a face in the browser, find real public matches on the live web with Gemini or Google Lens, then anchor and re-verify the result on the Ethereum Sepolia blockchain.',
-  applicationName: 'FACENET',
+  applicationName: 'Dark Veil',
   keywords: [
     'face recognition',
     'face-api',
@@ -54,15 +54,15 @@ export const metadata: Metadata = {
     'proof of authenticity',
   ],
   openGraph: {
-    title: 'FACENET // Face → Web → Chain',
+    title: 'DARK VEIL // Face → Web → Chain',
     description:
       'In-browser face detection, live web reverse search, and a keccak256 digest anchored in Ethereum Sepolia calldata.',
-    siteName: 'FACENET',
+    siteName: 'Dark Veil',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FACENET // Face → Web → Chain',
+    title: 'DARK VEIL // Face → Web → Chain',
     description:
       'In-browser face detection, live web reverse search, and a keccak256 digest anchored in Ethereum Sepolia calldata.',
   },

@@ -225,7 +225,7 @@ export function ProofView({ txHash }: { txHash: string }) {
         href="/"
         className="flex items-center gap-1.5 self-start font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
       >
-        <ArrowLeft className="h-3.5 w-3.5" /> back to facenet
+        <ArrowLeft className="h-3.5 w-3.5" /> back to dark veil
       </a>
 
 

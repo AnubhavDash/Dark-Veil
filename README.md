@@ -1,4 +1,4 @@
-# FACENET
+# Dark Veil
 
 Detect a face in the browser, find real public matches on the live web, then anchor the
 result to Ethereum Sepolia and re-verify it byte for byte.

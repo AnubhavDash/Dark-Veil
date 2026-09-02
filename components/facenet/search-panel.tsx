@@ -8,7 +8,7 @@ import type { SearchProvider, SearchResult, Source } from '@/lib/types'
 
 const PROVIDERS: { id: SearchProvider; label: string; hint: string }[] = [
   { id: 'gemini', label: 'Gemini + Search', hint: 'Vision model with Google Search grounding' },
-  { id: 'google_lens', label: 'Google Lens', hint: 'True reverse image search via SerpAPI' },
+  { id: 'google_lens', label: 'Google Lens', hint: 'True reverse image search via SearchApi' },
 ]
 
 type SearchPanelProps = {

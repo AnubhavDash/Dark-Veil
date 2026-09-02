@@ -30,7 +30,7 @@ const initialSteps: Record<StepId, StepState> = {
 /** Reshapes a Google Lens payload into the same view model the Gemini panel renders. */
 function lensToSearch(r: LensResult): SearchResult {
   return {
-    model: 'google lens · serpapi',
+    model: 'google lens · searchapi',
     identity: r.identity,
     confidence: r.matches.length ? 'Visual' : 'Low',
     summary: `Reverse image search returned ${r.matches.length} visual match${
@@ -125,7 +125,7 @@ export function usePipeline() {
     addLog(
       'info',
       lens
-        ? 'uploading crop and querying Google Lens (SerpAPI) for visual matches…'
+        ? 'uploading crop and querying Google Lens (SearchApi) for visual matches…'
         : 'querying Gemini vision + Google Search grounding…',
     )
     try {

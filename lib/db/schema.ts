@@ -24,7 +24,7 @@ export const anchors = pgTable('anchors', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
-/** Short-lived public hosting for face crops so Google Lens (SerpAPI) can fetch them by URL. */
+/** Short-lived public hosting for face crops so Google Lens can fetch them by URL. */
 export const lensImages = pgTable('lens_images', {
   imageHash: text('image_hash').primaryKey(),
   mime: text('mime').notNull().default('image/jpeg'),

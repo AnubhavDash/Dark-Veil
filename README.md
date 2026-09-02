@@ -4,7 +4,7 @@ Detect a face in the browser, find real public matches on the live web, then anc
 result to Ethereum Sepolia and re-verify it byte for byte.
 
 Nothing here is a mockup: detection runs locally with `face-api`, the reverse search hits
-Gemini with Google Search grounding (or Google Lens via SerpAPI), and the anchor is a real
+Gemini with Google Search grounding (or Google Lens via SearchApi), and the anchor is a real
 0-value Sepolia transaction whose calldata **is** the keccak256 digest of the record.
 Verification reads that calldata back and re-hashes the record independently.
 
@@ -12,7 +12,7 @@ Verification reads that calldata back and re-hashes the record independently.
 photo/webcam ──► face-api (in browser) ──► 128-d embedding
                                    │
                                    ├──► Gemini + Search grounding  ─┐
-                                   └──► Google Lens (SerpAPI)       ├──► chosen match
+                                   └──► Google Lens (SearchApi)     ├──► chosen match
                                                                     │
              canonical JSON ──► keccak256 ──► Sepolia tx calldata ◄──┘
                                                    │
@@ -35,7 +35,7 @@ photo/webcam ──► face-api (in browser) ──► 128-d embedding
 - A Neon Postgres database
 - A Google AI Studio API key
 - A Sepolia RPC URL and a throwaway wallet with a little Sepolia ETH
-- Optional: a SerpAPI key for the Google Lens path
+- Optional: a SearchApi.io key for the Google Lens path
 
 ## Setup
 
@@ -59,7 +59,7 @@ cp .env.example .env.local
 | `GEMINI_API_KEY` | yes | [Google AI Studio](https://aistudio.google.com/apikey) key. Drives the vision pass and the Search-grounded reverse lookup. |
 | `SEPOLIA_RPC_URL` | yes | Any Sepolia JSON-RPC endpoint. `https://ethereum-sepolia-rpc.publicnode.com` is free and needs no signup; Infura or Alchemy are steadier under load. Used for reads *and* for broadcasting anchors. |
 | `WALLET_PRIVATE_KEY` | yes | Private key of a **throwaway** wallet with a little Sepolia ETH. It signs the anchor transactions. Never point this at a key holding real funds. `npm run wallet:new` generates one into `.env.local` without printing it, then fund the address it shows from the [Google Cloud faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia) — unlike Alchemy's and Chainstack's, it does not require a mainnet ETH balance. |
-| `SERPAPI_KEY` | no | Enables the Google Lens provider. Without it the app runs Gemini-only and the Lens toggle reports the missing key. |
+| `SEARCHAPI_KEY` | no | [SearchApi.io](https://www.searchapi.io/) key, enabling the Google Lens provider. Without it the app runs Gemini-only and the Lens toggle reports the missing key. Lens needs a **publicly reachable** origin, because Google fetches the crop from `/api/img/<hash>` itself — on localhost the route returns 409 and says so. |
 | `NEXT_PUBLIC_SITE_URL` | no | Canonical origin for Open Graph image URLs. Inferred on Vercel; set it for a custom domain or self-hosting. |
 
 Missing keys fail readably rather than silently: the chain and search routes return a JSON
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS search_cache (
 );
 ```
 
-`lens_images` is a short-lived public host: SerpAPI fetches crops by URL, so the bytes are
+`lens_images` is a short-lived public host: Google Lens fetches crops by URL, so the bytes are
 served from `/api/img/<hash>`. Prune it on whatever schedule suits you — nothing depends on
 old rows.
 
@@ -166,8 +166,8 @@ invert their success semantics in tamper mode so a mismatch reads as green.
 | Route | Purpose |
 |-------|---------|
 | `POST /api/search` | Gemini vision + Google Search grounding; caches by sha256 of the crop |
-| `POST /api/lens` | Google Lens reverse image search via SerpAPI (needs `SERPAPI_KEY`) |
-| `GET /api/img/[hash]` | Serves a stored crop so SerpAPI can fetch it by URL |
+| `POST /api/lens` | Google Lens reverse image search via SearchApi.io (needs `SEARCHAPI_KEY`) |
+| `GET /api/img/[hash]` | Serves a stored crop so Google Lens can fetch it by URL |
 | `POST /api/enroll` | Store a name + 128-d descriptor + 160px thumbnail |
 | `POST /api/match` | Rank the gallery against a descriptor by Euclidean distance |
 | `POST /api/anchor` | Hash the record, broadcast the Sepolia tx, persist the anchor |

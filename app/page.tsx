@@ -94,7 +94,6 @@ export default function Page() {
             animateOn="view"
             sequential
             speed={45}
-            className="text-glow-soft"
             parentClassName="text-wordmark"
             encryptedClassName="text-muted-foreground/60"
           />
@@ -109,7 +108,7 @@ export default function Page() {
         </p>
         <dl className="mt-10 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
           {[
-            ['in-browser', 'no photo ever uploaded for detection'],
+            ['in-browser', 'no photo goes to a server for detection'],
             ['128 dims', 'face embedding compared at 0.6'],
             ['on-chain', 'keccak256 digest in tx calldata'],
           ].map(([term, hint]) => (

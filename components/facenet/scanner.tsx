@@ -43,12 +43,43 @@ type EyePhase = 'open' | 'closed'
 /** ~10 detections a second: smooth enough to feel live, cheap enough for a laptop CPU. */
 const TRACK_MS = 100
 
+/**
+ * getUserMedia rejects with a handful of distinct DOMExceptions that mean very
+ * different things — no camera attached, another app holding it, a permission the
+ * browser remembered as blocked — and the fix is different for each. Collapsing
+ * them into one "denied or unavailable" line meant the panel could not tell you
+ * which had happened.
+ */
+function cameraErrorMessage(err: unknown): string {
+  const name = err instanceof DOMException ? err.name : ''
+  switch (name) {
+    case 'NotAllowedError':
+    case 'PermissionDeniedError':
+      return 'camera blocked — Chrome is remembering a "Block" for this site. Click the camera icon in the address bar, allow it, then reload.'
+    case 'NotFoundError':
+    case 'DevicesNotFoundError':
+      return 'no camera found — the browser sees no video input on this machine. A browser running inside WSL cannot reach a Windows webcam; open the page in Windows Chrome instead.'
+    case 'NotReadableError':
+    case 'TrackStartError':
+      return 'camera is busy — another app (Zoom, Teams, OBS) is holding it. Close that and try again.'
+    case 'OverconstrainedError':
+      return 'no camera matched the requested constraints.'
+    case 'SecurityError':
+      return 'camera blocked by the page security policy.'
+    default:
+      return `camera unavailable${name ? ` (${name})` : ''}: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+  }
+}
+
 export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
   const [mode, setMode] = useState<Mode>('upload')
   const [hasStill, setHasStill] = useState(false)
   const [busy, setBusy] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [camActive, setCamActive] = useState(false)
+  const [camError, setCamError] = useState<string | null>(null)
 
   const [faces, setFaces] = useState<FaceResult[]>([])
   const [crops, setCrops] = useState<string[]>([])
@@ -210,6 +241,17 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
   captureRef.current = capture
 
   const startCam = useCallback(async () => {
+    setCamError(null)
+    // A camera needs a secure context, so `mediaDevices` is simply absent over
+    // plain http on anything but localhost — worth saying before asking for it.
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const msg = window.isSecureContext
+        ? 'this browser exposes no camera API'
+        : `insecure origin (${window.location.protocol}//${window.location.host}) — a camera needs https or localhost`
+      setCamError(msg)
+      log('error', msg)
+      return
+    }
     try {
       log('info', 'requesting camera access…')
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
@@ -225,8 +267,10 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
       eyePhaseRef.current = 'open'
       setCamActive(true)
       log('ok', livenessOn ? 'camera live · blink to capture' : 'camera live')
-    } catch {
-      log('error', 'camera permission denied or unavailable')
+    } catch (err) {
+      const msg = cameraErrorMessage(err)
+      setCamError(msg)
+      log('error', msg)
     }
   }, [livenessOn, log])
 
@@ -333,6 +377,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
     setSelected(0)
     setBlinks(0)
     eyePhaseRef.current = 'open'
+    setCamError(null)
     stopCam()
     onReset()
     log('info', 'scanner reset')
@@ -348,6 +393,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
             key={m}
             onClick={() => {
               setMode(m)
+              setCamError(null)
               if (m === 'upload') stopCam()
             }}
             disabled={disabled}
@@ -364,7 +410,12 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
         ))}
       </div>
 
-      <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-border bg-black/40 bg-grid">
+      {/*
+        Capped rather than `w-full`: at this column width an aspect-square stage
+        was ~730px tall, which pushed the liveness readout and the start-camera
+        button below the fold and left the pipeline panel beside it mostly empty.
+      */}
+      <div className="relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-xl border border-border bg-black/40 bg-grid">
         {hasStill ? (
           <canvas ref={stageRef} className="h-full w-full object-contain" />
         ) : mode === 'upload' ? (
@@ -415,10 +466,22 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
               className="pointer-events-none absolute inset-0 h-full w-full"
             />
             {!camActive ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+              // The placeholder is the button: the one below it is easy to miss, and
+              // Chrome only prompts for the camera on a real click.
+              <button
+                type="button"
+                onClick={startCam}
+                disabled={disabled}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-3 transition-colors hover:bg-primary/5 disabled:cursor-not-allowed"
+              >
                 <Camera className="h-12 w-12 text-primary/70" />
-                <p className="font-mono text-xs text-muted-foreground">camera offline</p>
-              </div>
+                <span className="font-mono text-xs uppercase tracking-widest text-primary">
+                  click to start the camera
+                </span>
+                <span className="font-mono text-2xs text-muted-foreground">
+                  chrome will ask for permission
+                </span>
+              </button>
             ) : (
               <>
                 <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-md border border-primary/30 bg-black/60 px-2 py-1 font-mono text-2xs uppercase tracking-widest text-primary">
@@ -446,6 +509,17 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
           </div>
         )}
       </div>
+
+      {mode === 'webcam' && camError && (
+        // The status log sits at the very bottom of the page, so a camera failure
+        // has to be legible right here or it reads as the button doing nothing.
+        <p
+          role="status"
+          className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs leading-relaxed text-destructive"
+        >
+          {camError}
+        </p>
+      )}
 
       {mode === 'webcam' && (
         <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/20 p-3">
@@ -545,7 +619,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
           ) : (
             <Button onClick={startCam} disabled={disabled} className="flex-1" size="lg">
               <Camera className="h-4 w-4" />
-              start camera
+              {camError ? 'try again' : 'start camera'}
             </Button>
           ))}
         {hasStill && (

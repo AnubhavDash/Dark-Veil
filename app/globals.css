@@ -206,15 +206,6 @@
   .text-glow-magenta {
     text-shadow: 0 0 12px oklch(0.7 0.22 330 / 55%), 0 0 32px oklch(0.7 0.22 330 / 25%);
   }
-  /*
-   * Wordmark halo. Two warm layers in the plume's hue: a tight faint one to give
-   * the letters an edge against the near-black, and a wide low-opacity one for
-   * the halo. No tight bright ring, which is what makes .text-glow-cyan read as
-   * neon rather than as light.
-   */
-  .text-glow-soft {
-    text-shadow: 0 0 10px oklch(0.88 0.06 78 / 20%), 0 0 44px oklch(0.72 0.11 58 / 34%);
-  }
   .shadow-glow-cyan {
     box-shadow: 0 0 0 1px oklch(0.82 0.15 195 / 25%), 0 0 24px oklch(0.82 0.15 195 / 18%);
   }

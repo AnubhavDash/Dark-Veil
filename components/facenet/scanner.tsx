@@ -421,16 +421,16 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
               </div>
             ) : (
               <>
-                <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-md border border-primary/30 bg-black/60 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-primary">
+                <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-md border border-primary/30 bg-black/60 px-2 py-1 font-mono text-2xs uppercase tracking-widest text-primary">
                   <Users className="h-3 w-3" />
                   {track.count} face{track.count === 1 ? '' : 's'}
                 </span>
-                <span className="pointer-events-none absolute right-3 top-3 flex items-center gap-1.5 rounded-md border border-primary/30 bg-black/60 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-primary">
+                <span className="pointer-events-none absolute right-3 top-3 flex items-center gap-1.5 rounded-md border border-primary/30 bg-black/60 px-2 py-1 font-mono text-2xs uppercase tracking-widest text-primary">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                   tracking · 10 fps
                 </span>
                 {track.count === 0 && (
-                  <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center font-mono text-2xs uppercase tracking-widest text-muted-foreground">
                     searching for a face…
                   </p>
                 )}
@@ -450,14 +450,14 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
       {mode === 'webcam' && (
         <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/20 p-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
               <Eye className="h-3.5 w-3.5 text-primary" /> liveness · eye aspect ratio
             </span>
             <button
               onClick={() => setLivenessOn((v) => !v)}
               disabled={disabled}
               className={cn(
-                'rounded-md border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors',
+                'rounded-md border px-2 py-0.5 font-mono text-2xs uppercase tracking-wider transition-colors',
                 livenessOn
                   ? 'border-primary/50 bg-primary/10 text-primary'
                   : 'border-border text-muted-foreground hover:text-foreground',
@@ -484,7 +484,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
             />
           </div>
 
-          <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          <div className="flex items-center justify-between font-mono text-2xs uppercase tracking-wider text-muted-foreground">
             <span className="tabular-nums">EAR {track.ear === null ? '—' : track.ear.toFixed(3)}</span>
             <span className="tabular-nums">
               {blinks} blink{blinks === 1 ? '' : 's'}
@@ -506,7 +506,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
 
       {faces.length > 1 && (
         <div className="flex flex-col gap-2">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             {faces.length} faces in frame · pick the subject
           </p>
           <div className="flex flex-wrap gap-2">
@@ -525,7 +525,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={crop} alt={`Face ${i + 1}`} className="h-full w-full object-cover" />
-                <span className="absolute inset-x-0 bottom-0 bg-black/75 font-mono text-[9px] tabular-nums text-primary">
+                <span className="absolute inset-x-0 bottom-0 bg-black/75 font-mono text-3xs tabular-nums text-primary">
                   {String(i + 1).padStart(2, '0')} · {(faces[i].score * 100).toFixed(0)}%
                 </span>
               </button>

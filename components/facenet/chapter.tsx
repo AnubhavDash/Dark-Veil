@@ -37,7 +37,7 @@ export function Chapter({
               {index}
             </span>
             <div className="min-w-0">
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-primary/70 sm:text-[11px]">
+              <p className="font-mono text-2xs uppercase tracking-[0.35em] text-primary/70 sm:text-xs">
                 {kicker}
               </p>
               <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-4xl">{title}</h2>

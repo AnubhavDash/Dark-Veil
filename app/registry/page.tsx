@@ -13,7 +13,7 @@ export default function RegistryPage() {
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10 sm:px-6">
       <header className="flex flex-col gap-2">
-        <span className="font-mono text-[11px] uppercase tracking-[0.35em] text-primary/70">
+        <span className="font-mono text-xs uppercase tracking-[0.35em] text-primary/70">
           dark veil // registry
         </span>
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Anchored records</h1>
@@ -29,7 +29,7 @@ export default function RegistryPage() {
 
       <a
         href="/"
-        className="flex items-center gap-1.5 self-start font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+        className="flex items-center gap-1.5 self-start font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> back to dark veil
       </a>

@@ -19,7 +19,7 @@ export default async function ProofPage({ params }: Params) {
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10 sm:px-6">
       <header className="flex flex-col gap-2">
-        <span className="font-mono text-[11px] uppercase tracking-[0.35em] text-primary/70">
+        <span className="font-mono text-xs uppercase tracking-[0.35em] text-primary/70">
           dark veil // public proof
         </span>
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Anchor verification</h1>

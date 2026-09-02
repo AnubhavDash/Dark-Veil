@@ -43,14 +43,14 @@ export function Registry({
   return (
     <div className={cn('flex flex-col gap-3', className)}>
       <div className="flex items-center gap-2">
-        <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
           <ScrollText className="h-3.5 w-3.5 text-primary" /> proof registry
           {count > 0 && <span className="text-primary">{count}</span>}
         </span>
         <button
           onClick={load}
           disabled={loading}
-          className="ml-auto flex items-center gap-1.5 rounded-md border border-border px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-50"
+          className="ml-auto flex items-center gap-1.5 rounded-md border border-border px-2 py-1 font-mono text-2xs uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-50"
         >
           {loading ? (
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -81,11 +81,11 @@ export function Registry({
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm text-foreground">{r.identity}</p>
-                <p className="truncate font-mono text-[11px] text-muted-foreground">
+                <p className="truncate font-mono text-xs text-muted-foreground">
                   {r.txHash.slice(0, 18)}…{r.txHash.slice(-8)}
                 </p>
               </div>
-              <div className="flex shrink-0 items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              <div className="flex shrink-0 items-center gap-3 font-mono text-2xs uppercase tracking-wider text-muted-foreground">
                 <span className="tabular-nums" title="Sepolia block">
                   {r.blockNumber ? `#${r.blockNumber.toLocaleString()}` : 'pending'}
                 </span>

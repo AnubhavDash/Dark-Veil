@@ -57,7 +57,7 @@ export function Stepper({ states }: { states: Record<StepId, StepState> }) {
               >
                 {step.label}
               </p>
-              <p className="mt-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground/60">
+              <p className="mt-1 font-mono text-xs uppercase tracking-wider text-muted-foreground/60">
                 {step.hint}
               </p>
             </div>

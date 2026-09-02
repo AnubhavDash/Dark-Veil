@@ -36,7 +36,7 @@ export function BroadcastPulse({
         <span className="absolute inset-6 rounded-full bg-primary/20 blur-md" />
         <Radio className="relative h-7 w-7 text-primary" />
       </div>
-      <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-primary">{label}</p>
+      <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">{label}</p>
       <p className="max-w-xs text-center text-xs text-muted-foreground">
         Waiting for the first confirmation. This takes one Sepolia block, roughly 12 seconds.
       </p>

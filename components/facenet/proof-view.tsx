@@ -20,7 +20,7 @@ import type { Proof } from '@/lib/types'
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
-      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+      <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">
         {label}
       </span>
       <span className="break-all font-mono text-xs text-foreground/90">{value}</span>
@@ -38,7 +38,7 @@ function CopyLink({ url }: { url: string }) {
           setTimeout(() => setCopied(false), 1600)
         })
       }}
-      className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+      className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 font-mono text-2xs uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
     >
       {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
       {copied ? 'copied' : 'copy link'}
@@ -121,7 +121,7 @@ export function ProofView({ txHash }: { txHash: string }) {
                   ? 'Hash mismatch'
                   : 'Chain unreachable'}
             </p>
-            <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
               {verdict === 'verified'
                 ? 'record digest equals the transaction calldata'
                 : verdict === 'mismatch'
@@ -136,7 +136,7 @@ export function ProofView({ txHash }: { txHash: string }) {
             href={proof.explorerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-primary hover:bg-primary/10"
+            className="flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 font-mono text-2xs uppercase tracking-wider text-primary hover:bg-primary/10"
           >
             etherscan <ExternalLink className="h-3 w-3" />
           </a>
@@ -145,7 +145,7 @@ export function ProofView({ txHash }: { txHash: string }) {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <HudPanel className="flex flex-col gap-3 p-5 lg:col-span-2" glow="none">
-          <h2 className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          <h2 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             anchored record
           </h2>
           <Row label="Identity" value={proof.identity} />
@@ -157,7 +157,7 @@ export function ProofView({ txHash }: { txHash: string }) {
           </div>
           <Row label="Signer" value={proof.from} />
           <div className="flex flex-col gap-0.5">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">
               Tx hash
             </span>
             <HashReveal value={proof.txHash} />
@@ -168,7 +168,7 @@ export function ProofView({ txHash }: { txHash: string }) {
           <div className="rounded-lg bg-white p-3">
             <QRCodeSVG value={url || proof.explorerUrl} size={132} level="M" marginSize={0} />
           </div>
-          <p className="text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          <p className="text-center font-mono text-2xs uppercase tracking-widest text-muted-foreground">
             scan to re-verify
           </p>
         </HudPanel>
@@ -176,26 +176,26 @@ export function ProofView({ txHash }: { txHash: string }) {
 
       <HudPanel className="flex flex-col gap-4 p-5" glow="none">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h2 className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          <h2 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             hash comparison
           </h2>
-          <code className="font-mono text-[10px] text-primary/80">{proof.algorithm}</code>
+          <code className="font-mono text-2xs text-primary/80">{proof.algorithm}</code>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">
               stored at anchor time
             </span>
             <HashReveal value={proof.storedHash} />
           </div>
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">
               recomputed from record
             </span>
             <HashReveal value={proof.computedHash} />
           </div>
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">
               read from tx calldata
             </span>
             {proof.onChainHash ? (
@@ -213,17 +213,17 @@ export function ProofView({ txHash }: { txHash: string }) {
       </HudPanel>
 
       <HudPanel className="flex flex-col gap-3 p-5" glow="none">
-        <h2 className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        <h2 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
           canonical json · the exact bytes that were hashed
         </h2>
-        <pre className="max-h-72 overflow-auto rounded-lg border border-border bg-black/40 p-3 font-mono text-[11px] leading-relaxed text-foreground/85">
+        <pre className="max-h-72 overflow-auto rounded-lg border border-border bg-black/40 p-3 font-mono text-xs leading-relaxed text-foreground/85">
           {proof.canonical}
         </pre>
       </HudPanel>
 
       <a
         href="/"
-        className="flex items-center gap-1.5 self-start font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+        className="flex items-center gap-1.5 self-start font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> back to dark veil
       </a>

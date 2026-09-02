@@ -203,6 +203,12 @@ invert their success semantics in tamper mode so a mismatch reads as green.
 
 ## Notes for anyone editing this
 
+- **The type scale lives in `@theme` in `app/globals.css`**, including two steps below
+  `text-xs` (`text-2xs`, `text-3xs`) for the mono HUD labels. Use those tokens rather than
+  arbitrary `text-[11px]` values — the whole scale was once ~70 hardcoded pixel sizes that
+  could not be retuned together. Tailwind's line-heights are unitless ratios, so leading
+  follows the size automatically. Do not scale type by changing the root font size: Tailwind's
+  spacing scale is rem-based too, so that resizes every padding and gap along with it.
 - **`Scanner` must stay behind `next/dynamic` with `ssr: false`.** `@vladmandic/face-api`
   bundles a TF.js runtime that cannot be evaluated in Node; a static import breaks the
   prerender of `/` with `this.util.TextEncoder is not a constructor`. Type-only imports from

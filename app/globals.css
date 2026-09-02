@@ -7,6 +7,26 @@
 @theme inline {
   --font-sans: var(--font-display), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
+
+  /*
+   * Type scale, shifted up ~2px across the reading sizes. Two steps are added
+   * below `xs` for the mono HUD labels, which were previously ~70 hardcoded
+   * 9/10/11px arbitrary values — unreachable from here and impossible to retune
+   * together. Every size below is a token so the next adjustment is this block
+   * alone. The paired `--text-*--line-height` defaults are unitless ratios, so
+   * leading follows automatically.
+   *
+   * Headings from `3xl` up are left at Tailwind's defaults; they were never the
+   * thing that was hard to read.
+   */
+  --text-3xs: 0.6875rem; /* 11px — smallest label, was 9px          */
+  --text-2xs: 0.75rem; /*    12px — mono kickers, was 10px          */
+  --text-xs: 0.8125rem; /*   13px — mono labels, was 11-12px        */
+  --text-sm: 0.9375rem; /*   15px — body copy, was 14px            */
+  --text-base: 1.0625rem; /* 17px — blurbs at sm:, was 16px        */
+  --text-lg: 1.1875rem; /*   19px — was 18px                       */
+  --text-xl: 1.3125rem; /*   21px — was 20px                       */
+  --text-2xl: 1.625rem; /*   26px — chapter titles, was 24px       */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -82,7 +102,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --wordmark: oklch(0.29 0.01 262);
+  --wordmark: oklch(0.32 0.03 72);
 }
 
 .dark {
@@ -120,12 +140,16 @@
   --sidebar-ring: oklch(0.82 0.15 195);
 
   /*
-   * Wordmark. Deliberately not --primary: that is the neon cyan (chroma 0.15)
-   * used for accents, and at wordmark size it fights the backdrop instead of
-   * belonging to it. This sits on the background's own hue (265) at chroma
-   * 0.03, so the name reads as the same material lit brighter.
+   * Wordmark. Sampled from a rendered frame of the backdrop: 85% of the canvas
+   * is near-black at hue 255-270, and the only part with any light in it is a
+   * copper plume averaging hue 40 / chroma 0.047 / L 0.31. A cool grey-blue
+   * name had nothing in the frame to agree with — it read as a decal sitting on
+   * top. This is that plume's own hue carried up to near-white, so the letters
+   * look like the light rather than an overlay, and warm gold against the cyan
+   * accents is a complementary pair where an almost-cyan grey was just a weaker
+   * version of them.
    */
-  --wordmark: oklch(0.87 0.03 262);
+  --wordmark: oklch(0.91 0.05 80);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -183,12 +207,13 @@
     text-shadow: 0 0 12px oklch(0.7 0.22 330 / 55%), 0 0 32px oklch(0.7 0.22 330 / 25%);
   }
   /*
-   * Wordmark halo. A single wide, low-opacity shadow in the background's own
-   * hue — enough to lift the letters off the backdrop, with none of the tight
-   * bright ring that makes .text-glow-cyan read as neon.
+   * Wordmark halo. Two warm layers in the plume's hue: a tight faint one to give
+   * the letters an edge against the near-black, and a wide low-opacity one for
+   * the halo. No tight bright ring, which is what makes .text-glow-cyan read as
+   * neon rather than as light.
    */
   .text-glow-soft {
-    text-shadow: 0 0 32px oklch(0.72 0.05 262 / 38%);
+    text-shadow: 0 0 10px oklch(0.88 0.06 78 / 20%), 0 0 44px oklch(0.72 0.11 58 / 34%);
   }
   .shadow-glow-cyan {
     box-shadow: 0 0 0 1px oklch(0.82 0.15 195 / 25%), 0 0 24px oklch(0.82 0.15 195 / 18%);

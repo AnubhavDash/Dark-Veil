@@ -61,7 +61,7 @@ export function SearchPanel({
             >
               <span
                 className={cn(
-                  'flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider',
+                  'flex items-center gap-2 font-mono text-xs uppercase tracking-wider',
                   active ? 'text-primary' : 'text-muted-foreground',
                 )}
               >
@@ -87,12 +87,12 @@ export function SearchPanel({
             className="h-16 w-16 shrink-0 rounded-lg border border-primary/40 object-cover shadow-glow-cyan"
           />
         ) : (
-          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-dashed border-border font-mono text-[10px] uppercase text-muted-foreground/60">
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-dashed border-border font-mono text-2xs uppercase text-muted-foreground/60">
             no face
           </span>
         )}
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          <p className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">
             query image
           </p>
           <p className="mt-1 text-sm text-muted-foreground">

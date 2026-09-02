@@ -27,14 +27,14 @@ export function MatchResults({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             Identity
           </p>
           <p className="text-lg font-semibold text-foreground text-glow-cyan">{result.identity}</p>
         </div>
         <span
           className={cn(
-            'ml-auto rounded-md border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider',
+            'ml-auto rounded-md border px-2.5 py-1 font-mono text-xs uppercase tracking-wider',
             confidenceColor(result.confidence),
           )}
         >
@@ -44,12 +44,12 @@ export function MatchResults({
 
       <p className="text-sm leading-relaxed text-muted-foreground">{result.summary}</p>
 
-      <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+      <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
         <Globe className="h-3.5 w-3.5 text-primary" />
         {result.sources.length} {result.provider === 'google_lens' ? 'visual' : 'grounded web'} source
         {result.sources.length === 1 ? '' : 's'}
         {result.cached && (
-          <span className="rounded border border-border px-1.5 py-px text-[9px] text-muted-foreground/70">
+          <span className="rounded border border-border px-1.5 py-px text-3xs text-muted-foreground/70">
             cached
           </span>
         )}
@@ -103,7 +103,7 @@ export function MatchResults({
                   ) : (
                     <span
                       className={cn(
-                        'flex h-6 w-6 shrink-0 items-center justify-center rounded-md border font-mono text-[11px]',
+                        'flex h-6 w-6 shrink-0 items-center justify-center rounded-md border font-mono text-xs',
                         isSel ? 'border-primary text-primary' : 'border-border text-muted-foreground',
                       )}
                     >
@@ -116,7 +116,7 @@ export function MatchResults({
                   )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-foreground">{s.title}</span>
-                    <span className="block truncate font-mono text-[11px] text-muted-foreground">
+                    <span className="block truncate font-mono text-xs text-muted-foreground">
                       {host}
                     </span>
                   </span>

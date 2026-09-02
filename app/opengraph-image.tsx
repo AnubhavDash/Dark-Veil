@@ -9,6 +9,9 @@ const BG = '#080b14'
 const CYAN = '#4fd8f5'
 const MAGENTA = '#f25bc0'
 const DIM = '#8b93a8'
+// oklch(0.91 0.05 80) — the same champagne as --wordmark, so the card and the
+// page agree on what the name looks like.
+const WORDMARK = '#f3debd'
 
 export default async function Image() {
   return new ImageResponse(
@@ -47,7 +50,7 @@ export default async function Image() {
             fontSize: 148,
             fontWeight: 700,
             letterSpacing: '-0.03em',
-            color: '#f2f5fb',
+            color: WORDMARK,
           }}
         >
           DARK VEIL

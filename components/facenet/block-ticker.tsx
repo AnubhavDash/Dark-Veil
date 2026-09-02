@@ -55,7 +55,7 @@ export function BlockTicker({
     return (
       <div
         className={cn(
-          'flex items-center gap-2 rounded-full border border-border px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground/70',
+          'flex items-center gap-2 rounded-full border border-border px-2.5 py-1 font-mono text-2xs uppercase tracking-widest text-muted-foreground/70',
           className,
         )}
         title={offline ? 'SEPOLIA_RPC_URL is missing or unreachable' : 'connecting…'}
@@ -69,7 +69,7 @@ export function BlockTicker({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-primary',
+        'flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 font-mono text-2xs uppercase tracking-widest text-primary',
         className,
       )}
       title={`${info.txCount} transactions · ${Number(info.gasUsed).toLocaleString()} gas used`}

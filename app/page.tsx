@@ -27,7 +27,7 @@ const DarkVeil = dynamic(() => import('@/components/DarkVeil'), { ssr: false })
 const Scanner = dynamic(() => import('@/components/facenet/scanner').then((m) => m.Scanner), {
   ssr: false,
   loading: () => (
-    <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-border bg-black/30 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+    <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-border bg-black/30 font-mono text-xs uppercase tracking-widest text-muted-foreground">
       loading detector…
     </div>
   ),
@@ -67,7 +67,7 @@ export default function Page() {
                 key={c.id}
                 onClick={() => scrollToSection(c.id)}
                 className={cn(
-                  'rounded-md px-2 py-1 font-mono text-[10px] uppercase tracking-widest transition-colors',
+                  'rounded-md px-2 py-1 font-mono text-2xs uppercase tracking-widest transition-colors',
                   active === c.id
                     ? 'bg-primary/10 text-primary'
                     : 'text-muted-foreground hover:text-foreground',
@@ -85,7 +85,7 @@ export default function Page() {
         id="top"
         className="mx-auto flex min-h-[78vh] max-w-7xl flex-col items-center justify-center px-4 py-16 text-center sm:px-6"
       >
-        <span className="mb-4 flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-primary">
+        <span className="mb-4 flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 font-mono text-xs uppercase tracking-widest text-primary">
           <Cpu className="h-3.5 w-3.5" /> face → web → chain
         </span>
         <h1 className="text-5xl font-bold tracking-tight sm:text-7xl">
@@ -107,21 +107,21 @@ export default function Page() {
             shineColor="oklch(0.9 0.02 240)"
           />
         </p>
-        <dl className="mt-10 grid w-full max-w-2xl grid-cols-3 gap-3">
+        <dl className="mt-10 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
           {[
             ['in-browser', 'no photo ever uploaded for detection'],
             ['128 dims', 'face embedding compared at 0.6'],
             ['on-chain', 'keccak256 digest in tx calldata'],
           ].map(([term, hint]) => (
             <div key={term} className="rounded-lg border border-border bg-black/20 px-3 py-2.5">
-              <dt className="font-mono text-[11px] uppercase tracking-widest text-primary">{term}</dt>
-              <dd className="mt-1 text-[11px] leading-snug text-muted-foreground">{hint}</dd>
+              <dt className="font-mono text-xs uppercase tracking-widest text-primary">{term}</dt>
+              <dd className="mt-1 text-xs leading-snug text-muted-foreground">{hint}</dd>
             </div>
           ))}
         </dl>
         <button
           onClick={() => scrollToSection('capture')}
-          className="mt-12 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.3em] text-muted-foreground transition-colors hover:text-primary"
+          className="mt-12 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground transition-colors hover:text-primary"
         >
           <ArrowDown className="h-3.5 w-3.5 animate-bounce motion-reduce:animate-none" /> begin
         </button>
@@ -144,7 +144,7 @@ export default function Page() {
             />
           </HudPanel>
           <HudPanel className="p-5 lg:col-span-5" glow="none">
-            <h3 className="mb-4 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            <h3 className="mb-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">
               pipeline
             </h3>
             <Stepper states={p.steps} />
@@ -248,7 +248,7 @@ export default function Page() {
           <Registry version={p.registryVersion} limit={12} />
           <a
             href="/registry"
-            className="mt-4 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-primary hover:underline"
+            className="mt-4 inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-primary hover:underline"
           >
             <ScrollText className="h-3.5 w-3.5" /> open the full registry
           </a>
@@ -264,10 +264,10 @@ export default function Page() {
 
       <footer className="border-t border-primary/10 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4 text-center sm:px-6">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/60">
+          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground/60">
             face-api in-browser · google lens · gemini vision · ethereum sepolia
           </p>
-          <p className="max-w-xl text-[11px] leading-relaxed text-muted-foreground/50">
+          <p className="max-w-xl text-xs leading-relaxed text-muted-foreground/50">
             A demonstration of how little friction stands between a photograph and a name. Use it
             on yourself, on public figures, or on images you have permission to search.
           </p>

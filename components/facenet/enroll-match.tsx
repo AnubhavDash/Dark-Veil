@@ -124,11 +124,11 @@ export function EnrollMatch({ descriptor, crop, log, disabled }: EnrollMatchProp
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-black/20 p-4">
-        <h3 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        <h3 className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
           <UserPlus className="h-3.5 w-3.5 text-primary" /> enroll this face
         </h3>
         <label className="flex flex-col gap-1">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/70">
+          <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground/70">
             name
           </span>
           <input
@@ -141,7 +141,7 @@ export function EnrollMatch({ descriptor, crop, log, disabled }: EnrollMatchProp
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/70">
+          <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground/70">
             links · one per line, optional
           </span>
           <textarea
@@ -179,7 +179,7 @@ export function EnrollMatch({ descriptor, crop, log, disabled }: EnrollMatchProp
       </div>
 
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-black/20 p-4">
-        <h3 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        <h3 className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
           <Users className="h-3.5 w-3.5 text-primary" />
           {match ? 'closest gallery faces' : `gallery · ${gallery.length}`}
         </h3>
@@ -209,7 +209,7 @@ export function EnrollMatch({ descriptor, crop, log, disabled }: EnrollMatchProp
                     <span className="truncate text-sm text-foreground">{c.name}</span>
                     <span
                       className={cn(
-                        'ml-auto shrink-0 font-mono text-[11px] tabular-nums',
+                        'ml-auto shrink-0 font-mono text-xs tabular-nums',
                         c.isMatch ? 'text-primary' : 'text-muted-foreground',
                       )}
                     >
@@ -269,7 +269,7 @@ export function EnrollMatch({ descriptor, crop, log, disabled }: EnrollMatchProp
         )}
 
         {match && (
-          <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          <div className="flex items-center gap-3 font-mono text-2xs uppercase tracking-wider text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span aria-hidden className="h-2.5 w-px bg-chart-4" /> threshold {match.threshold}
             </span>

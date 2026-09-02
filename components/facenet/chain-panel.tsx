@@ -20,7 +20,7 @@ import type { AnchorResult, TamperInfo, VerifyMode, VerifyResult } from '@/lib/t
 function Field({ label, value, mono = true }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
-      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+      <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">
         {label}
       </span>
       <span className={cn('break-all text-xs text-foreground/90', mono && 'font-mono')}>{value}</span>
@@ -31,7 +31,7 @@ function Field({ label, value, mono = true }: { label: string; value: string; mo
 function HashField({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
-      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+      <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">
         {label}
       </span>
       <HashReveal value={value} />
@@ -105,7 +105,7 @@ export function ChainPanel({
           <HashField label="Record hash (in calldata)" value={anchor.hash} />
           <a
             href={`/proof/${anchor.txHash}`}
-            className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-primary hover:underline"
+            className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-primary hover:underline"
           >
             <FileSearch className="h-3.5 w-3.5" /> open public proof page
           </a>
@@ -147,7 +147,7 @@ export function ChainPanel({
       )}
 
       {tamper && (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-chart-4/40 bg-chart-4/5 p-3 font-mono text-[11px]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-chart-4/40 bg-chart-4/5 p-3 font-mono text-xs">
           <span className="uppercase tracking-widest text-chart-4">record edited</span>
           <span className="text-muted-foreground">{tamper.field}:</span>
           <span className="text-muted-foreground line-through">{tamper.from}</span>

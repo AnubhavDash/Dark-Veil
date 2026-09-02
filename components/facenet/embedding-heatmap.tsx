@@ -45,11 +45,11 @@ export function EmbeddingHeatmap({
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
           <Fingerprint className="h-3.5 w-3.5 text-primary" />
           {descriptor.length}-d embedding
         </span>
-        <span className="ml-auto font-mono text-[11px] text-muted-foreground/80 tabular-nums">
+        <span className="ml-auto font-mono text-xs text-muted-foreground/80 tabular-nums">
           {hover !== null ? (
             <>
               dim <span className="text-primary">{String(hover).padStart(3, '0')}</span> ={' '}
@@ -93,7 +93,7 @@ export function EmbeddingHeatmap({
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
+          <span className="font-mono text-2xs text-muted-foreground tabular-nums">
             −{stats.max.toFixed(2)}
           </span>
           <span
@@ -104,11 +104,11 @@ export function EmbeddingHeatmap({
                 'linear-gradient(to right, oklch(0.7 0.22 330), oklch(0.7 0.22 330 / 0.08), oklch(0.82 0.15 195 / 0.08), oklch(0.82 0.15 195))',
             }}
           />
-          <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
+          <span className="font-mono text-2xs text-muted-foreground tabular-nums">
             +{stats.max.toFixed(2)}
           </span>
         </div>
-        <dl className="ml-auto flex gap-4 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+        <dl className="ml-auto flex gap-4 font-mono text-2xs uppercase tracking-wider text-muted-foreground">
           <div className="flex gap-1.5">
             <dt className="text-muted-foreground/60">min</dt>
             <dd className="tabular-nums text-foreground/80">{stats.min.toFixed(3)}</dd>

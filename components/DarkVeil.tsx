@@ -19,6 +19,8 @@ uniform float uNoise;
 uniform float uScan;
 uniform float uScanFreq;
 uniform float uWarp;
+uniform float uZoom;
+uniform vec2 uCenter;
 uniform float uLightMode;
 #define iTime uTime
 #define iResolution uResolution
@@ -63,6 +65,12 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord){
     vec2 uv=fragCoord/uResolution.xy*2.-1.;
     uv.x*=uResolution.x/uResolution.y;
     uv.y*=-1.;
+    // This network is not uniformly interesting: sampled over 6 frames at two
+    // aspect ratios, everything it lights sits in the top ~40% of the default
+    // field, centroid 0.19 of the frame height, and the rest is flat black.
+    // uZoom/uCenter crop the field to that region so the whole canvas has
+    // something in it. Defaults (1, 0, 0) are the untouched framing.
+    uv=uv/uZoom+uCenter;
     uv+=uWarp*vec2(sin(uv.y*6.283+uTime*0.5),cos(uv.x*6.283+uTime*0.5))*0.05;
     fragColor=cppn_fn(uv,0.1*sin(0.3*uTime),0.1*sin(0.69*uTime),0.1*sin(0.44*uTime));
 }
@@ -92,6 +100,11 @@ type Props = {
   speed?: number;
   scanlineFrequency?: number;
   warpAmount?: number;
+  /** Magnification of the sampled field. 1 is stock; 2 samples half the extent. */
+  zoom?: number;
+  /** Where in the field the frame is centred, in the same units as the stock ±1 range. */
+  centerX?: number;
+  centerY?: number;
   resolutionScale?: number;
   lightMode?: boolean;
 };
@@ -103,6 +116,9 @@ export default function DarkVeil({
                                    speed = 0.5,
                                    scanlineFrequency = 0,
                                    warpAmount = 0,
+                                   zoom = 1,
+                                   centerX = 0,
+                                   centerY = 0,
                                    resolutionScale = 1,
                                    lightMode = false
                                  }: Props) {
@@ -131,6 +147,8 @@ export default function DarkVeil({
         uScan: { value: scanlineIntensity },
         uScanFreq: { value: scanlineFrequency },
         uWarp: { value: warpAmount },
+        uZoom: { value: zoom },
+        uCenter: { value: new Vec2(centerX, centerY) },
         uLightMode: { value: lightMode ? 1 : 0 }
       }
     });
@@ -157,6 +175,8 @@ export default function DarkVeil({
       program.uniforms.uScan.value = scanlineIntensity;
       program.uniforms.uScanFreq.value = scanlineFrequency;
       program.uniforms.uWarp.value = warpAmount;
+      program.uniforms.uZoom.value = zoom;
+      program.uniforms.uCenter.value.set(centerX, centerY);
       program.uniforms.uLightMode.value = lightMode ? 1 : 0;
       renderer.render({ scene: mesh });
       frame = requestAnimationFrame(loop);
@@ -168,7 +188,7 @@ export default function DarkVeil({
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', resize);
     };
-  }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount, resolutionScale, lightMode]);
+  }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount, zoom, centerX, centerY, resolutionScale, lightMode]);
 
   return <canvas ref={ref} className="w-full h-full block" />;
 }

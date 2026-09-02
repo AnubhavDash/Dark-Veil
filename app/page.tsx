@@ -19,9 +19,6 @@ import { scrollToSection, useActiveSection } from '@/lib/hooks'
 import { usePipeline } from '@/lib/use-pipeline'
 import { cn } from '@/lib/utils'
 
-// WebGL CPPN backdrop — client only, and never server-rendered.
-const DarkVeil = dynamic(() => import('@/components/DarkVeil'), { ssr: false })
-
 // face-api pulls in a TF.js runtime that cannot be evaluated during prerender,
 // so the scanner is loaded only once there is a real browser.
 const Scanner = dynamic(() => import('@/components/facenet/scanner').then((m) => m.Scanner), {
@@ -48,11 +45,6 @@ export default function Page() {
 
   return (
     <>
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
-        <DarkVeil hueShift={220} noiseIntensity={0.02} scanlineIntensity={0.06} speed={0.4} warpAmount={0.6} />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/55 via-background/75 to-background" />
-      </div>
-
       <header className="sticky top-0 z-30 border-b border-primary/10 bg-background/70 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
           <button

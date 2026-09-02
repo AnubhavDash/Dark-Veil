@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google'
+import { Backdrop } from '@/components/backdrop'
 import './globals.css'
 
 const display = Space_Grotesk({
@@ -81,6 +82,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${display.variable} ${mono.variable}`}>
       <body className="antialiased font-sans">
+        <Backdrop />
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

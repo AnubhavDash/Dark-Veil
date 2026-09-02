@@ -171,10 +171,6 @@ invert their success semantics in tamper mode so a mismatch reads as green.
 
 ## Notes for anyone editing this
 
-- **The document does not scroll.** `components/canvasui/Laser.tsx` owns an
-  `overflow: auto` container and is rendered `position: fixed; inset: 0`, so the whole page
-  lives inside it. Scroll helpers in `lib/hooks.ts` walk up to the real scrolling ancestor
-  instead of touching `window` — keep it that way if you add navigation.
 - **`Scanner` must stay behind `next/dynamic` with `ssr: false`.** `@vladmandic/face-api`
   bundles a TF.js runtime that cannot be evaluated in Node; a static import breaks the
   prerender of `/` with `this.util.TextEncoder is not a constructor`. Type-only imports from

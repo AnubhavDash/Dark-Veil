@@ -19,10 +19,14 @@ const levelTag: Record<LogLine['level'], string> = {
 }
 
 export function StatusLog({ lines }: { lines: LogLine[] }) {
-  const endRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
+  // Scroll the log's own box, not the document. `scrollIntoView` walks up every scrollable
+  // ancestor, which yanked the whole page down to the footer as soon as the first line landed.
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = scrollRef.current
+    if (!el || lines.length === 0) return
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }, [lines])
 
   return (
@@ -35,7 +39,10 @@ export function StatusLog({ lines }: { lines: LogLine[] }) {
           system.log
         </span>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed">
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed"
+      >
         {lines.length === 0 ? (
           <p className="text-muted-foreground/60">awaiting input_</p>
         ) : (
@@ -51,7 +58,6 @@ export function StatusLog({ lines }: { lines: LogLine[] }) {
             </div>
           ))
         )}
-        <div ref={endRef} />
       </div>
     </div>
   )

@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * The Laser background owns an `overflow: auto` scroll container, so the page does
- * not scroll the document. Walk up to whichever ancestor is actually scrolling.
+ * Nearest scrolling ancestor, falling back to the document. The page scrolls the document
+ * now, but keep this indirection if you ever wrap the content in an `overflow: auto` shell.
  */
 export function scrollParentOf(el: HTMLElement | null): HTMLElement | null {
   let node = el?.parentElement ?? null

@@ -57,7 +57,7 @@ export default function Page() {
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
           <button
             onClick={() => scrollToSection('top')}
-            className="font-mono text-sm font-bold uppercase tracking-[0.3em] text-primary"
+            className="font-mono text-sm font-bold uppercase tracking-[0.3em] text-wordmark transition-colors hover:text-foreground"
           >
             dark veil
           </button>
@@ -94,9 +94,9 @@ export default function Page() {
             animateOn="view"
             sequential
             speed={45}
-            className="text-glow-cyan"
-            parentClassName="text-foreground"
-            encryptedClassName="text-primary/50"
+            className="text-glow-soft"
+            parentClassName="text-wordmark"
+            encryptedClassName="text-muted-foreground/60"
           />
         </h1>
         <p className="mt-5 max-w-2xl text-pretty text-sm sm:text-base">
@@ -189,7 +189,7 @@ export default function Page() {
         index="03"
         kicker="chapter three"
         title="Find them on the live web"
-        blurb="Only now does the crop leave the browser. Gemini looks at the face and searches the web with grounding, returning citations you can open yourself. Google Lens is the alternative path: a true reverse image search that finds pages containing this exact image, not only well-known people."
+        blurb="Only now does the crop leave the browser. Google Lens does the actual looking — a reverse image search that finds pages containing this exact face, not only well-known people — and Gemini reads the crop alongside those pages to put a name to it. The citations are Google's, not the model's, so there is nothing for it to invent."
       >
         <HudPanel className="p-5" glow="magenta">
           <SearchPanel
@@ -265,7 +265,7 @@ export default function Page() {
       <footer className="border-t border-primary/10 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4 text-center sm:px-6">
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/60">
-            face-api in-browser · gemini search grounding · google lens · ethereum sepolia
+            face-api in-browser · google lens · gemini vision · ethereum sepolia
           </p>
           <p className="max-w-xl text-[11px] leading-relaxed text-muted-foreground/50">
             A demonstration of how little friction stands between a photograph and a name. Use it

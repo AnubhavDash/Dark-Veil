@@ -36,7 +36,7 @@ const siteUrl = resolveSiteUrl()
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'DARK VEIL // Face → Web → Chain',
+    default: 'Dark Veil',
     template: '%s',
   },
   description:
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     'proof of authenticity',
   ],
   openGraph: {
-    title: 'DARK VEIL // Face → Web → Chain',
+    title: 'Dark Veil — from a face to an on-chain proof',
     description:
       'In-browser face detection, live web reverse search, and a keccak256 digest anchored in Ethereum Sepolia calldata.',
     siteName: 'Dark Veil',
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'DARK VEIL // Face → Web → Chain',
+    title: 'Dark Veil — from a face to an on-chain proof',
     description:
       'In-browser face detection, live web reverse search, and a keccak256 digest anchored in Ethereum Sepolia calldata.',
   },

@@ -38,6 +38,7 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  --color-wordmark: var(--wordmark);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -81,6 +82,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --wordmark: oklch(0.29 0.01 262);
 }
 
 .dark {
@@ -116,6 +118,14 @@
   --sidebar-accent-foreground: oklch(0.14 0.03 265);
   --sidebar-border: oklch(0.82 0.15 195 / 14%);
   --sidebar-ring: oklch(0.82 0.15 195);
+
+  /*
+   * Wordmark. Deliberately not --primary: that is the neon cyan (chroma 0.15)
+   * used for accents, and at wordmark size it fights the backdrop instead of
+   * belonging to it. This sits on the background's own hue (265) at chroma
+   * 0.03, so the name reads as the same material lit brighter.
+   */
+  --wordmark: oklch(0.87 0.03 262);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -171,6 +181,14 @@
   }
   .text-glow-magenta {
     text-shadow: 0 0 12px oklch(0.7 0.22 330 / 55%), 0 0 32px oklch(0.7 0.22 330 / 25%);
+  }
+  /*
+   * Wordmark halo. A single wide, low-opacity shadow in the background's own
+   * hue — enough to lift the letters off the backdrop, with none of the tight
+   * bright ring that makes .text-glow-cyan read as neon.
+   */
+  .text-glow-soft {
+    text-shadow: 0 0 32px oklch(0.72 0.05 262 / 38%);
   }
   .shadow-glow-cyan {
     box-shadow: 0 0 0 1px oklch(0.82 0.15 195 / 25%), 0 0 24px oklch(0.82 0.15 195 / 18%);

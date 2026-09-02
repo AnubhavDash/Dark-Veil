@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { desc } from 'drizzle-orm'
-import { db } from '@/lib/db'
+import { db, dbErrorMessage } from '@/lib/db'
 import { enrollments } from '@/lib/db/schema'
 
 const MAX_THUMB = 120_000 // ~120 KB data URL cap
@@ -10,18 +10,25 @@ function isDescriptor(v: unknown): v is number[] {
 }
 
 export async function GET() {
-  const rows = await db
-    .select({
-      id: enrollments.id,
-      name: enrollments.name,
-      links: enrollments.links,
-      thumb: enrollments.thumb,
-      createdAt: enrollments.createdAt,
-    })
-    .from(enrollments)
-    .orderBy(desc(enrollments.createdAt))
-    .limit(100)
-  return NextResponse.json({ enrollments: rows })
+  try {
+    const rows = await db
+      .select({
+        id: enrollments.id,
+        name: enrollments.name,
+        links: enrollments.links,
+        thumb: enrollments.thumb,
+        createdAt: enrollments.createdAt,
+      })
+      .from(enrollments)
+      .orderBy(desc(enrollments.createdAt))
+      .limit(100)
+    return NextResponse.json({ enrollments: rows })
+  } catch (err) {
+    return NextResponse.json(
+      { error: dbErrorMessage(err, 'Could not read the enrollments.') },
+      { status: 500 },
+    )
+  }
 }
 
 export async function POST(req: Request) {
@@ -51,10 +58,17 @@ export async function POST(req: Request) {
       ? body.thumb
       : null
 
-  const [row] = await db
-    .insert(enrollments)
-    .values({ name, links, descriptor: body.descriptor.map((n) => Number(n.toFixed(6))), thumb })
-    .returning({ id: enrollments.id, name: enrollments.name, createdAt: enrollments.createdAt })
+  try {
+    const [row] = await db
+      .insert(enrollments)
+      .values({ name, links, descriptor: body.descriptor.map((n) => Number(n.toFixed(6))), thumb })
+      .returning({ id: enrollments.id, name: enrollments.name, createdAt: enrollments.createdAt })
 
-  return NextResponse.json(row)
+    return NextResponse.json(row)
+  } catch (err) {
+    return NextResponse.json(
+      { error: dbErrorMessage(err, 'Could not save the enrollment.') },
+      { status: 500 },
+    )
+  }
 }

@@ -70,8 +70,8 @@ cp .env.example .env.local
 | `SERPAPI_KEY` | no | [SerpApi](https://serpapi.com/) key — 250 searches/month, resets. Used when SearchApi is missing or errors, so one exhausted vendor does not take chapter 03 down. |
 | `NEXT_PUBLIC_SITE_URL` | no | Canonical origin for Open Graph image URLs. Inferred on Vercel; set it for a custom domain or self-hosting. |
 
-Missing keys fail readably rather than silently: the chain and search routes return a JSON
-error naming the variable they need, and the message surfaces in the status log. Detection and
+Missing keys fail readably rather than silently: every route that needs a variable returns a
+JSON error naming it, and the message surfaces in the status log. Detection and
 encoding never leave the browser, so chapter 01 works with no keys at all and chapter 02 needs
 only `DATABASE_URL`.
 

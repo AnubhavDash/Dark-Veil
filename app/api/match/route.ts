@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, dbErrorMessage } from '@/lib/db'
 import { enrollments } from '@/lib/db/schema'
 import { MATCH_THRESHOLD, euclid, similarity } from '@/lib/match'
 
@@ -15,16 +15,24 @@ export async function POST(req: Request) {
   }
   const q = descriptor.map(Number)
 
-  const rows = await db
-    .select({
-      id: enrollments.id,
-      name: enrollments.name,
-      links: enrollments.links,
-      thumb: enrollments.thumb,
-      descriptor: enrollments.descriptor,
-      createdAt: enrollments.createdAt,
-    })
-    .from(enrollments)
+  let rows: { id: number; name: string; links: string[]; thumb: string | null; descriptor: number[]; createdAt: Date }[]
+  try {
+    rows = await db
+      .select({
+        id: enrollments.id,
+        name: enrollments.name,
+        links: enrollments.links,
+        thumb: enrollments.thumb,
+        descriptor: enrollments.descriptor,
+        createdAt: enrollments.createdAt,
+      })
+      .from(enrollments)
+  } catch (err) {
+    return NextResponse.json(
+      { error: dbErrorMessage(err, 'Could not read the enrollment gallery.') },
+      { status: 500 },
+    )
+  }
 
   const scored = rows
     .map((r) => {

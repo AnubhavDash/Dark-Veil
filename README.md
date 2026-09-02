@@ -26,12 +26,36 @@ face will guess a name and then look for pages that agree with its guess, which 
 confident fabrications about real people get made. Lens matches the pixels, so the URLs are
 pages Google found carrying this image — there is no step where a name gets invented.
 
+## Where each stage lives
+
+| Stage | What actually runs | Code |
+|-------|--------------------|------|
+| Face scan input | Webcam or dropped file → TinyFaceDetector, eye-aspect-ratio blink liveness, landmarks, a 128-d descriptor, and a padded crop — all in the browser | `lib/face.ts`, `components/facenet/scanner.tsx` |
+| Web / social search | The crop is hosted at a public URL, then Google Lens is queried through SearchApi with SerpApi behind it. Every result is a URL Google returned for those pixels | `lib/lens.ts`, `app/api/lens/route.ts`, `app/api/img/[hash]/route.ts` |
+| Blockchain record | Chosen match → canonical JSON → keccak256 → the calldata of a real 0-value Sepolia transaction | `lib/chain.ts`, `app/api/anchor/route.ts` |
+| Re-verification | Re-read that calldata from the chain, re-hash the stored record locally, compare all three hashes | `app/api/verify/route.ts`, `app/api/proof/[txHash]/route.ts` |
+
+Which chain and why calldata: [Which blockchain](#which-blockchain). What this cannot do:
+[Known limitations](#known-limitations).
+
+### A real anchor, if you would rather not run anything
+
+Sepolia transaction
+[`0x16b9043f…6316c7`](https://sepolia.etherscan.io/tx/0x16b9043fa3844ed31526ad912879a3799cde5d4fb4f490ba8b4bf5b21b6316c7),
+block 11622395. Its calldata is
+`0x591afbe640a9b481fd40e811ab2dd05c9512d00623efeb6ff24e59c5726805ee` — the keccak256 of the
+canonical JSON of a record whose match came back from a live Lens lookup that returned 12 real
+URLs. Open
+[`/proof/0x16b9043f…`](https://dark-veil.vercel.app/proof/0x16b9043fa3844ed31526ad912879a3799cde5d4fb4f490ba8b4bf5b21b6316c7)
+and the page re-reads the chain, re-hashes the record and shows all three hashes agreeing. No
+install, no keys.
+
 ## The five chapters
 
 | # | Chapter | What actually happens |
 |---|---------|----------------------|
 | 01 | Capture | TinyFaceDetector at 224px drives a ~10 fps HUD; eye-aspect-ratio blink detection fires the shutter; the captured still gets a full 416px pass with landmarks and descriptors for every face |
-| 02 | Encode | The 128-d embedding is drawn as a 16×8 heatmap; enrol it in Neon and match later faces against the gallery by Euclidean distance (threshold 0.6) |
+| 02 | Encode | The 128-d embedding is drawn as a 16×8 heatmap; hover a cell to read that dimension's exact value. Two photos of the same person produce visibly similar tiles |
 | 03 | Search | The crop — and only the crop — goes to Google Lens for a real reverse image lookup; results are cached in Neon by sha256 of the image so repeat runs cost nothing. Google fetches the crop itself, so this needs a public origin |
 | 04 | Anchor | Record → canonical JSON → keccak256 → Sepolia calldata; the tamper button edits one field and re-verifies so you can watch the check fail |
 | 05 | Proof | Every anchor gets a permanent page that re-reads the chain on each visit, with a QR code so another device can confirm it independently |
@@ -205,8 +229,8 @@ invert their success semantics in tamper mode so a mismatch reads as green.
 |-------|---------|
 | `POST /api/lens` | Google Lens reverse image search — SearchApi first, SerpApi as fallback; caches by sha256 of the crop |
 | `GET /api/img/[hash]` | Serves a stored crop so Google Lens can fetch it by URL |
-| `POST /api/enroll` | Store a name + 128-d descriptor + 160px thumbnail |
-| `POST /api/match` | Rank the gallery against a descriptor by Euclidean distance |
+| `POST /api/enroll` | Store a name + 128-d descriptor + 160px thumbnail — kept, but no longer called by the page |
+| `POST /api/match` | Rank the gallery against a descriptor by Euclidean distance — kept, but no longer called by the page |
 | `POST /api/anchor` | Hash the record, broadcast the Sepolia tx, persist the anchor |
 | `POST /api/verify` | Re-read calldata and compare against a re-hash of the record |
 | `GET /api/proof/[txHash]` | Everything a proof page needs, verified server-side |
@@ -241,9 +265,11 @@ invert their success semantics in tamper mode so a mismatch reads as green.
   embeddings are also known to vary across demographic groups; nothing here corrects for that.
 - **Blink liveness stops a photograph, not a replay.** Holding up a still image fails the
   eye-aspect-ratio check. Playing a video of someone blinking does not.
-- **Chapter 02 is a side exhibit.** Its gallery holds only faces you enrolled yourself, so it
-  cannot identify a stranger, and chapters 03–05 never read from it. Enrollment stores a 160px
-  thumbnail alongside the descriptor.
+- **The enrol/match gallery is not part of the pipeline.** `/api/enroll` and `/api/match` still
+  work and still rank descriptors by Euclidean distance at 0.6, but nothing on the page calls
+  them: that gallery only ever held faces you enrolled yourself, so it could not identify a
+  stranger, and chapters 03–05 never read from it. Chapter 02 is the embedding and nothing
+  else. Called directly, enrollment stores a 160px thumbnail alongside the descriptor.
 - **Searches are cached by image sha256.** Re-running an identical crop returns the stored
   answer instead of a fresh lookup — cheap, but it means the cache and not Google is what
   answered. Delete the `search_cache` row to force a real search.

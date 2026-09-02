@@ -8,7 +8,6 @@ import { BlockTicker } from '@/components/facenet/block-ticker'
 import { ChainPanel } from '@/components/facenet/chain-panel'
 import { Chapter } from '@/components/facenet/chapter'
 import { EmbeddingHeatmap } from '@/components/facenet/embedding-heatmap'
-import { EnrollMatch } from '@/components/facenet/enroll-match'
 import { HudPanel } from '@/components/facenet/hud-panel'
 import { Registry } from '@/components/facenet/registry'
 import { Reveal } from '@/components/facenet/reveal'
@@ -101,7 +100,7 @@ export default function Page() {
         <dl className="mt-10 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
           {[
             ['in-browser', 'no photo goes to a server for detection'],
-            ['128 dims', 'face embedding compared at 0.6'],
+            ['128 dims', 'the whole face, as one vector'],
             ['on-chain', 'keccak256 digest in tx calldata'],
           ].map(([term, hint]) => (
             <div key={term} className="rounded-lg border border-border bg-black/20 px-3 py-2.5">
@@ -148,24 +147,14 @@ export default function Page() {
         index="02"
         kicker="chapter two"
         title="Turn the face into numbers"
-        blurb="The recognition network reduces the crop to 128 floating-point values. Two photos of the same person land close together in that space; different people land far apart. Enrol the embedding and you can identify the same face again later without keeping a single photograph."
+        blurb="The recognition network reduces the crop to 128 floating-point values. Two photos of the same person land close together in that space; different people land far apart. Hover any cell to read that dimension exactly — this vector is the face, and it is all the rest of the pipeline has to work with."
       >
         {descriptor ? (
-          <div className="flex flex-col gap-4">
-            <Reveal>
-              <HudPanel className="p-5">
-                <EmbeddingHeatmap descriptor={descriptor} />
-              </HudPanel>
-            </Reveal>
-            <Reveal delay={80}>
-              <EnrollMatch
-                descriptor={descriptor}
-                crop={p.detected?.crop ?? null}
-                log={p.addLog}
-                disabled={p.busy}
-              />
-            </Reveal>
-          </div>
+          <Reveal>
+            <HudPanel className="p-5">
+              <EmbeddingHeatmap descriptor={descriptor} />
+            </HudPanel>
+          </Reveal>
         ) : (
           <HudPanel className="p-8 text-center">
             <p className="text-sm text-muted-foreground">

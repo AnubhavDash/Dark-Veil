@@ -122,7 +122,7 @@ export default function Page() {
         index="01"
         kicker="chapter one"
         title="Capture a face"
-        blurb="Drop a photo or open the webcam. Detection, landmarks and the 128-dimension embedding all run locally with face-api — the image never leaves the browser at this stage. With liveness on, a real blink is what triggers the shutter, which a printed photo cannot fake."
+        blurb="Drop a photo or open the webcam. Detection, landmarks and the 128-dimension embedding all run locally with face-api — the image never leaves the browser at this stage. Switch liveness on and a real blink is what triggers the shutter, which a printed photo cannot fake."
       >
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <HudPanel className="p-5 lg:col-span-7">

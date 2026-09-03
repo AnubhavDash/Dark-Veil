@@ -87,7 +87,10 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
   const [crops, setCrops] = useState<string[]>([])
   const [selected, setSelected] = useState(0)
 
-  const [livenessOn, setLivenessOn] = useState(true)
+  // Manual by default. Blink liveness is the more interesting proof and it stays one tap away,
+  // but a shutter that fires on its own — and only once it is satisfied — is the wrong thing to
+  // hand someone the first time they open a camera.
+  const [livenessOn, setLivenessOn] = useState(false)
   const [blinks, setBlinks] = useState(0)
   const [track, setTrack] = useState<{ count: number; ear: number | null; score: number }>({
     count: 0,
@@ -180,7 +183,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
         if (found.length === 0) {
           log(
             'error',
-            'no face found after six passes — more light, a straighter angle, or a photo where the face fills more of the frame will all help',
+            'no face found after seven passes — more light, a straighter angle, or a photo where the face is turned toward the camera will all help',
           )
           return
         }
@@ -288,7 +291,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
       setBlinks(0)
       eyePhaseRef.current = 'open'
       setCamActive(true)
-      log('ok', livenessOn ? 'camera live · blink to capture' : 'camera live')
+      log('ok', livenessOn ? 'camera live · blink to capture' : 'camera live · press capture when ready')
     } catch (err) {
       const msg = cameraErrorMessage(err)
       setCamError(msg)

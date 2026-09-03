@@ -14,7 +14,7 @@ import { Reveal } from '@/components/facenet/reveal'
 import { SearchPanel } from '@/components/facenet/search-panel'
 import { StatusLog } from '@/components/facenet/status-log'
 import { Stepper } from '@/components/facenet/stepper'
-import { VenomTurn } from '@/components/venom-turn'
+import { VenomMark } from '@/components/venom-mark'
 import { scrollToSection, useActiveSection } from '@/lib/hooks'
 import { usePipeline } from '@/lib/use-pipeline'
 import { cn } from '@/lib/utils'
@@ -45,10 +45,10 @@ export default function Page() {
 
   return (
     <>
-      {/* Home only. The turn is spread over this page's whole scroll length, so
-          on a short page like /proof/<txHash> it would spin through 180° in a
-          couple of wheel clicks. */}
-      <VenomTurn />
+      {/* Home only. The reveal is spread over this page's whole scroll length,
+          so on a short page like /proof/<txHash> it would go from a rumour to
+          full strength in a couple of wheel clicks. */}
+      <VenomMark />
 
       <header className="sticky top-0 z-30 border-b border-primary/10 bg-background/70 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">

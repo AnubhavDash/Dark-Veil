@@ -83,7 +83,7 @@ export function drawLandmarks(
   ctx.restore()
 }
 
-/** Outlines one 6-point eye ring so the liveness check is visible, not just a number. */
+/** Outlines one 6-point eye ring, so the landmarks read as a face and not as scattered dots. */
 export function drawEyeRing(
   ctx: CanvasRenderingContext2D,
   points: Pt[],

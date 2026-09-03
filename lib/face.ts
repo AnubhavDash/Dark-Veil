@@ -476,37 +476,6 @@ export async function detectFace(input: Detectable): Promise<FaceResult | null> 
   return faces[0] ?? null
 }
 
-/* ------------------------------------------------------------------ liveness */
-
-// 68-point landmark model: eyes are contiguous 6-point rings.
-const LEFT_EYE = [36, 37, 38, 39, 40, 41]
-const RIGHT_EYE = [42, 43, 44, 45, 46, 47]
-
-/** Eye closed below this ratio. */
-export const EAR_CLOSED = 0.2
-/** Eye open again above this ratio — the gap is hysteresis, so noise can't fake a blink. */
-export const EAR_OPEN = 0.26
-
-const dist = (a: Landmark, b: Landmark) => Math.hypot(a.x - b.x, a.y - b.y)
-
-function ringEar(pts: Landmark[], ring: number[]): number {
-  const [p1, p2, p3, p4, p5, p6] = ring.map((i) => pts[i])
-  const horizontal = dist(p1, p4)
-  if (horizontal === 0) return 0
-  return (dist(p2, p6) + dist(p3, p5)) / (2 * horizontal)
-}
-
-/**
- * Eye Aspect Ratio (Soukupová & Čech). Height-over-width of the eye opening:
- * ~0.3 wide open, collapses toward 0 during a blink.
- */
-export function eyeAspectRatio(landmarks: Landmark[]): { left: number; right: number; avg: number } | null {
-  if (landmarks.length < 48) return null
-  const left = ringEar(landmarks, LEFT_EYE)
-  const right = ringEar(landmarks, RIGHT_EYE)
-  return { left, right, avg: (left + right) / 2 }
-}
-
 /**
  * Crop the detected face (with padding) out of the source into a data URL,
  * downscaled to keep the payload small for the vision request.

@@ -30,7 +30,7 @@ pages Google found carrying this image — there is no step where a name gets in
 
 | Stage | What actually runs | Code |
 |-------|--------------------|------|
-| Face scan input | Webcam or dropped file → an escalating detector cascade, eye-aspect-ratio blink liveness, landmarks, a 128-d descriptor, and a padded crop — all in the browser | `lib/face.ts`, `components/facenet/scanner.tsx` |
+| Face scan input | Webcam or dropped file → an escalating detector cascade, landmarks, a 128-d descriptor, and a padded crop — all in the browser | `lib/face.ts`, `components/facenet/scanner.tsx` |
 | Web / social search | The crop is hosted at a public URL, then Google Lens is queried through SearchApi with SerpApi behind it. Every result is a URL Google returned for those pixels | `lib/lens.ts`, `app/api/lens/route.ts`, `app/api/img/[hash]/route.ts` |
 | Blockchain record | Chosen match → canonical JSON → keccak256 → the calldata of a real 0-value Sepolia transaction | `lib/chain.ts`, `app/api/anchor/route.ts` |
 | Re-verification | Re-read that calldata from the chain, re-hash the stored record locally, compare all three hashes | `app/api/verify/route.ts`, `app/api/proof/[txHash]/route.ts` |
@@ -54,7 +54,7 @@ install, no keys.
 
 | # | Chapter | What actually happens |
 |---|---------|----------------------|
-| 01 | Capture | TinyFaceDetector at 224px drives a ~10 fps HUD; the shutter is a button, or eye-aspect-ratio blink detection if you switch it on; the captured still goes through the detection cascade below, with landmarks and descriptors for every face |
+| 01 | Capture | TinyFaceDetector at 224px drives a ~10 fps HUD that boxes every face it can see and scores it; you press the shutter, and the captured still goes through the detection cascade below, with landmarks and descriptors for every face |
 | 02 | Encode | The 128-d embedding is drawn as a 16×8 heatmap; hover a cell to read that dimension's exact value. Two photos of the same person produce visibly similar tiles |
 | 03 | Search | The crop — and only the crop — goes to Google Lens for a real reverse image lookup; results are cached in Neon by sha256 of the image so repeat runs cost nothing. Google fetches the crop itself, so this needs a public origin |
 | 04 | Anchor | Record → canonical JSON → keccak256 → Sepolia calldata; the tamper button edits one field and re-verifies so you can watch the check fail |
@@ -368,9 +368,11 @@ invert their success semantics in tamper mode so a mismatch reads as green.
   computed from processed pixels. The crop sent to Lens is always cut from the untouched still,
   so only chapter 02 is affected — but two photos of the same person will land further apart if
   one of them needed the fallback.
-- **Blink liveness stops a photograph, not a replay.** It is also off until you turn it on —
-  the shutter is a button by default. With it on, holding up a still image fails the
-  eye-aspect-ratio check; playing a video of someone blinking does not.
+- **Nothing here checks the camera is pointed at a live person.** Holding a printed photo or a
+  phone screen up to the webcam captures exactly as well as a face does. An eye-aspect-ratio
+  blink check used to gate the shutter and was removed: capture is a deliberate button press
+  now, so the only thing standing between a photo of a photo and the pipeline is the person
+  pressing it.
 - **The enrol/match gallery is not part of the pipeline.** `/api/enroll` and `/api/match` still
   work and still rank descriptors by Euclidean distance at 0.6, but nothing on the page calls
   them: that gallery only ever held faces you enrolled yourself, so it could not identify a

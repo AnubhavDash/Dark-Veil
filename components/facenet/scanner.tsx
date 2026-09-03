@@ -1,15 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Camera, CircleDot, Eye, RotateCcw, ScanFace, Upload, Users } from 'lucide-react'
+import { Camera, CircleDot, RotateCcw, ScanFace, Upload, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
-  EAR_CLOSED,
-  EAR_OPEN,
   cropFace,
   detectFaces,
-  eyeAspectRatio,
   loadFaceModels,
   prepareStill,
   trackFaces,
@@ -40,7 +37,6 @@ type ScannerProps = {
 }
 
 type Mode = 'upload' | 'webcam'
-type EyePhase = 'open' | 'closed'
 
 /** ~10 detections a second: smooth enough to feel live, cheap enough for a laptop CPU. */
 const TRACK_MS = 100
@@ -87,26 +83,16 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
   const [crops, setCrops] = useState<string[]>([])
   const [selected, setSelected] = useState(0)
 
-  // Manual by default. Blink liveness is the more interesting proof and it stays one tap away,
-  // but a shutter that fires on its own — and only once it is satisfied — is the wrong thing to
-  // hand someone the first time they open a camera.
-  const [livenessOn, setLivenessOn] = useState(false)
-  const [blinks, setBlinks] = useState(0)
-  const [track, setTrack] = useState<{ count: number; ear: number | null; score: number }>({
-    count: 0,
-    ear: null,
-    score: 0,
-  })
+  // Nothing fires the shutter but the button. An automatic one — waiting for a blink, then
+  // capturing on its own — took the one decision the person in front of the camera should be
+  // making and made it for them, on a frame they had not seen.
+  const [track, setTrack] = useState<{ count: number; score: number }>({ count: 0, score: 0 })
 
   const stillRef = useRef<HTMLCanvasElement | null>(null)
   const stageRef = useRef<HTMLCanvasElement>(null)
   const trackCanvasRef = useRef<HTMLCanvasElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
-
-  const eyePhaseRef = useRef<EyePhase>('open')
-  const armedRef = useRef(false)
-  const captureRef = useRef<() => void>(() => {})
 
   // Warm up the models as soon as the component mounts.
   useEffect(() => {
@@ -120,7 +106,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
     streamRef.current?.getTracks().forEach((t) => t.stop())
     streamRef.current = null
     setCamActive(false)
-    setTrack({ count: 0, ear: null, score: 0 })
+    setTrack({ count: 0, score: 0 })
   }, [])
 
   useEffect(() => () => stopCam(), [stopCam])
@@ -263,8 +249,6 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
     process(frame, 'webcam frame')
   }, [process, stopCam])
 
-  captureRef.current = capture
-
   const startCam = useCallback(async () => {
     setCamError(null)
     // A camera needs a secure context, so `mediaDevices` is simply absent over
@@ -288,20 +272,17 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
       setHasStill(false)
       setFaces([])
       setCrops([])
-      setBlinks(0)
-      eyePhaseRef.current = 'open'
       setCamActive(true)
-      log('ok', livenessOn ? 'camera live · blink to capture' : 'camera live · press capture when ready')
+      log('ok', 'camera live · press capture when ready')
     } catch (err) {
       const msg = cameraErrorMessage(err)
       setCamError(msg)
       log('error', msg)
     }
-  }, [livenessOn, log])
+  }, [log])
 
-  armedRef.current = livenessOn && camActive && !busy && !hasStill
-
-  // Live pre-capture loop: detect, draw the HUD, and watch the eyes for a blink.
+  // Live pre-capture loop: detect and draw the HUD. It never captures anything — the shutter
+  // is the button, so this loop only ever tells you what the frame looks like to the detector.
   useEffect(() => {
     if (!camActive) return
     let cancelled = false
@@ -309,7 +290,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
     let misses = 0
     let boosted = false
 
-    const paint = (found: TrackedFace[], ear: number | null, closed: boolean) => {
+    const paint = (found: TrackedFace[]) => {
       const video = videoRef.current
       const canvas = trackCanvasRef.current
       if (!video || !canvas) return
@@ -329,20 +310,15 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
       const fit = coverFit(video.videoWidth || 1, video.videoHeight || 1, cw, ch)
       found.forEach((face, i) => {
         const primary = i === 0
-        const accent = closed ? HUD_MAGENTA : HUD_CYAN
-        drawBrackets(ctx, face.box, fit, primary ? accent : HUD_DIM, 2, primary)
+        const colour = primary ? HUD_CYAN : HUD_DIM
+        drawBrackets(ctx, face.box, fit, colour, 2, primary)
         drawLandmarks(ctx, face.landmarks, fit, primary ? HUD_MAGENTA : HUD_DIM, primary ? 1.4 : 1)
         if (primary) {
-          drawEyeRing(ctx, face.landmarks, LEFT_EYE_RING, fit, accent, 1.6)
-          drawEyeRing(ctx, face.landmarks, RIGHT_EYE_RING, fit, accent, 1.6)
+          drawEyeRing(ctx, face.landmarks, LEFT_EYE_RING, fit, HUD_CYAN, 1.6)
+          drawEyeRing(ctx, face.landmarks, RIGHT_EYE_RING, fit, HUD_CYAN, 1.6)
         }
-        drawTag(
-          ctx,
-          face.box,
-          fit,
-          primary && ear !== null ? `EAR ${ear.toFixed(3)}` : `${(face.score * 100).toFixed(0)}%`,
-          primary ? accent : HUD_DIM,
-        )
+        // How sure the detector is, which is the only number worth reading here.
+        drawTag(ctx, face.box, fit, `${(face.score * 100).toFixed(0)}%`, colour)
       })
     }
 
@@ -368,29 +344,8 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
             misses = 0
           }
 
-          const ear = found[0] ? eyeAspectRatio(found[0].landmarks)?.avg ?? null : null
-          let closed = eyePhaseRef.current === 'closed'
-
-          if (ear !== null) {
-            if (eyePhaseRef.current === 'open' && ear < EAR_CLOSED) {
-              eyePhaseRef.current = 'closed'
-              closed = true
-            } else if (eyePhaseRef.current === 'closed' && ear > EAR_OPEN) {
-              // A full close-then-open cycle is one blink — a still photo can never do this.
-              eyePhaseRef.current = 'open'
-              closed = false
-              setBlinks((b) => b + 1)
-              if (armedRef.current) {
-                log('ok', `blink detected (EAR ${ear.toFixed(3)}) — liveness confirmed, capturing`)
-                cancelled = true
-                captureRef.current()
-                return
-              }
-            }
-          }
-
-          setTrack({ count: found.length, ear, score: found[0]?.score ?? 0 })
-          paint(found, ear, closed)
+          setTrack({ count: found.length, score: found[0]?.score ?? 0 })
+          paint(found)
         } catch {
           /* a dropped frame is fine, the next one is 100ms away */
         }
@@ -399,7 +354,6 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
       if (cancelled) return
       timer = setTimeout(loop, Math.max(0, TRACK_MS - (performance.now() - started)))
     }
-
 
     loop()
     return () => {
@@ -415,8 +369,6 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
     setFaces([])
     setCrops([])
     setSelected(0)
-    setBlinks(0)
-    eyePhaseRef.current = 'open'
     onReset()
   }, [onReset])
 
@@ -445,8 +397,6 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
     [clearStill, faces.length, hasStill, log, mode, stopCam],
   )
 
-  const earPct = track.ear === null ? 0 : Math.min(100, (track.ear / 0.45) * 100)
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
@@ -470,8 +420,8 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
 
       {/*
         Capped rather than `w-full`: at this column width an aspect-square stage
-        was ~730px tall, which pushed the liveness readout and the start-camera
-        button below the fold and left the pipeline panel beside it mostly empty.
+        was ~730px tall, which pushed the shutter button below the fold and left
+        the pipeline panel beside it mostly empty.
       */}
       <div className="relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-xl border border-border bg-black/40 bg-grid">
         {hasStill ? (
@@ -579,83 +529,6 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
         </p>
       )}
 
-      {mode === 'webcam' && (
-        <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/20 p-3">
-          <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-              <Eye className="h-3.5 w-3.5 text-primary" /> liveness · eye aspect ratio
-            </span>
-            {/*
-              Two visible options with the live one lit, rather than one button captioned
-              with the state it is already in — that read as a label, so nobody realised
-              the shutter trigger could be changed at all.
-            */}
-            <div
-              role="group"
-              aria-label="Shutter trigger"
-              className="flex items-center gap-0.5 rounded-md border border-border bg-black/40 p-0.5"
-            >
-              {([true, false] as const).map((on) => (
-                <button
-                  key={String(on)}
-                  onClick={() => setLivenessOn(on)}
-                  disabled={disabled}
-                  aria-pressed={livenessOn === on}
-                  title={
-                    on
-                      ? 'A real blink fires the shutter'
-                      : 'Press the button below to fire the shutter'
-                  }
-                  className={cn(
-                    'rounded px-2 py-0.5 font-mono text-2xs uppercase tracking-wider transition-colors',
-                    livenessOn === on
-                      ? 'bg-primary/15 text-primary'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {on ? 'blink' : 'manual'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative h-2 w-full overflow-hidden rounded-full bg-black/40">
-            <div
-              className="h-full rounded-full bg-primary transition-[width] duration-100"
-              style={{ width: `${earPct}%` }}
-            />
-            <span
-              aria-hidden
-              className="absolute inset-y-0 w-px bg-destructive/80"
-              style={{ left: `${(EAR_CLOSED / 0.45) * 100}%` }}
-            />
-            <span
-              aria-hidden
-              className="absolute inset-y-0 w-px bg-chart-4/80"
-              style={{ left: `${(EAR_OPEN / 0.45) * 100}%` }}
-            />
-          </div>
-
-          <div className="flex items-center justify-between font-mono text-2xs uppercase tracking-wider text-muted-foreground">
-            <span className="tabular-nums">EAR {track.ear === null ? '—' : track.ear.toFixed(3)}</span>
-            <span className="tabular-nums">
-              {blinks} blink{blinks === 1 ? '' : 's'}
-            </span>
-            <span className={track.ear !== null && track.ear < EAR_CLOSED ? 'text-accent' : 'text-primary'}>
-              {!camActive
-                ? 'offline'
-                : track.ear === null
-                  ? 'no eyes tracked'
-                  : track.ear < EAR_CLOSED
-                    ? 'eyes closed'
-                    : livenessOn
-                      ? 'awaiting blink'
-                      : 'manual shutter'}
-            </span>
-          </div>
-        </div>
-      )}
-
       {faces.length > 1 && (
         <div className="flex flex-col gap-2">
           <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
@@ -692,7 +565,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
           (camActive ? (
             <Button onClick={capture} disabled={disabled || busy} className="flex-1" size="lg">
               <CircleDot className="h-4 w-4" />
-              {livenessOn ? 'capture now (skip blink)' : 'capture frame'}
+              capture frame
             </Button>
           ) : (
             <Button onClick={startCam} disabled={disabled} className="flex-1" size="lg">

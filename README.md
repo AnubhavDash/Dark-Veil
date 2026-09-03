@@ -63,20 +63,30 @@ install, no keys.
 ### When the first pass misses
 
 TinyFaceDetector at 416px is fast and handles an ordinary well-lit photo, but it gives up on
-grain, dim light, low contrast and faces that sit small in a wide frame. Rather than answer
-"no face detected" there, `detectFaces()` escalates — five passes, cheapest first, stopping at
-the first that finds something, so a photo that works immediately pays nothing for the rest:
+grain, dim light, low contrast, backlighting and faces that sit small in a wide frame. Rather
+than answer "no face detected" there, `detectFaces()` escalates — six passes, cheapest first,
+stopping at the first that finds something, so a photo that works immediately pays nothing for
+the rest:
 
 | # | Pass | For |
 |---|------|-----|
 | 1 | TinyFaceDetector, 416px, score ≥ 0.4 | ordinary photos — the only pass most images touch |
 | 2 | TinyFaceDetector, 800px, score ≥ 0.25 | faces that are small in frame, or slightly washed out |
-| 3 | SSD MobileNet v1, confidence ≥ 0.25 | grain, dim light, off-angle heads — 5.6 MB, fetched once and only if needed |
-| 4 | SSD MobileNet v1 at 0.2 over a contrast-stretched copy | frames using a fraction of the brightness range |
-| 5 | SSD MobileNet v1 at 0.2 over a denoised, contrast-stretched copy | dim *and* grainy webcam frames, where stretching alone amplifies the noise |
+| 3 | TinyFaceDetector at 800px over a shadow-lifted copy (γ 1.8) | backlit faces — nothing to download, so it goes before the heavy passes |
+| 4 | SSD MobileNet v1, confidence ≥ 0.25 | grain, dim light, off-angle heads — 5.6 MB, fetched once and only if needed |
+| 5 | SSD MobileNet v1 at 0.2 over a contrast-stretched copy | frames using a fraction of the brightness range |
+| 6 | SSD MobileNet v1 at 0.2 over a denoised, contrast-stretched copy | dim *and* grainy webcam frames, where stretching alone amplifies the noise |
+
+Pass 3 exists because passes 5 and 6 cannot help a backlit face. A contrast stretch only has
+something to give when the histogram has unused room at both ends, and a bright wall behind
+someone's head fills the top of it: on the webcam frame that prompted this, p1 was 6 and p99
+was 237, so the stretch worked out to a gain of 1.10 — a no-op — while the face itself sat at
+mean 34/255. Gamma needs no headroom, because it remaps every value through `255·(v/255)^(1/γ)`
+and the shadows come up on their own. That frame is undetectable raw *and* stretched at every
+input size tried (224, 320, 416, 512, 608, 800); at γ 1.8 it scores 0.50 at 800px.
 
 The status log names the pass that succeeded. Measured against the same face crop degraded
-five ways — one pass at 416px versus the cascade:
+five ways, plus one real frame from a laptop webcam — one pass at 416px versus the cascade:
 
 | Frame | Single 416px pass | Cascade |
 |-------|-------------------|---------|
@@ -84,8 +94,9 @@ five ways — one pass at 416px versus the cascade:
 | dimmed to 60%, light grain | found | found · pass 1 |
 | dimmed to 45%, medium grain | found | found · pass 1 |
 | dimmed to 28% | **missed** | found · pass 2 |
-| black and white, contrast squeezed to a 76-value band | **missed** | found · pass 4 |
+| black and white, contrast squeezed to a 76-value band | **missed** | found · pass 5 |
 | face at 14% of a 1600px frame | **missed** | found · pass 2 |
+| real backlit webcam frame, face at mean luminance 34/255 | **missed** | found · pass 3 |
 | dimmed to 30% *and* heavy grain (mean luminance 18/255) | **missed** | **missed** |
 
 The last row is the honest floor: at that point the noise is as large as the signal, and a
@@ -93,8 +104,26 @@ detector that claims a face there is guessing. Dropping the threshold to 0.1 doe
 "detections" — five of them on a clean single-face crop, which is what fitting noise looks
 like — so the cascade stops rather than invent one.
 
+### Why a detection can still be thrown away
+
+The low thresholds those recovery passes need for reach are also what lets junk through. Given
+a near-black film poster, the detector boxed the lit head of a hammer, and the pipeline did
+what it was told: cropped it, embedded it, and sent it off to be reverse-searched — a wrong
+answer presented with exactly as much confidence as a right one.
+
+So a detection that did not score well has to also look like a face. Measured over the two
+frames that actually failed, every false box was 5–6% of the frame's long edge, with its outer
+eye corners under 0.34 of its own width apart and a score of 0.10–0.24; every true detection of
+the same face, across four gammas and three input sizes, was 34–55% of the frame with an eye
+span of 0.42–0.57, scoring up to 0.50. Below a score of 0.45, `plausible()` in `lib/face.ts`
+requires at least 12% of the frame and an eye span between 0.38 and 0.85 of the box width, and
+the log says how many boxes it discarded. A detection that scores well is never thrown away on
+geometry — a missed face is the worse failure of the two.
+
 The live webcam loop escalates too, on the same principle: it runs at 224px, and if it finds
-nothing for half a second it switches to 320px over a denoised, contrast-stretched frame.
+nothing for half a second it lifts the shadows and drops its threshold to 0.2. It stays at
+224px because that is where the measurement pointed — the backlit frame is found there at 0.28
+and at none of 320, 416 or 512.
 
 ## Requirements
 
@@ -297,15 +326,20 @@ invert their success semantics in tamper mode so a mismatch reads as green.
   testnets do get deprecated. The permanence claim is only as strong as the network you point
   the code at.
 - **Detection has a floor.** The cascade in [When the first pass misses](#when-the-first-pass-misses)
-  recovers dim, low-contrast, black-and-white and small-in-frame faces that a single pass drops,
-  but a frame that is both very dark and heavily grained stays undetected, and so do profile
-  views and heavy occlusion. Error rates for face embeddings are also known to vary across
-  demographic groups; nothing here corrects for that.
-- **A recovered face gets a worse embedding.** Passes 4 and 5 detect on a contrast-stretched
-  (and, in pass 5, blurred) copy, so the 128-d vector for such a face is computed from
-  processed pixels. The crop sent to Lens is always cut from the untouched still, so only
-  chapter 02 is affected — but two photos of the same person will land further apart if one of
-  them needed the fallback.
+  recovers dim, low-contrast, backlit, black-and-white and small-in-frame faces that a single
+  pass drops, but a frame that is both very dark and heavily grained stays undetected, and so do
+  profile views and heavy occlusion. Error rates for face embeddings are also known to vary
+  across demographic groups; nothing here corrects for that.
+- **The plausibility filter can discard a real face.** A detection scoring under 0.45 is kept
+  only if it covers at least 12% of the frame and its eyes sit where a face's eyes go. That is
+  what stops a bright blob on a dark poster from being cropped and searched as a person, but a
+  genuine face that is both small in frame and weakly detected will be dropped with it, and a
+  steeply turned head can fail the eye-span check. The log says when this happens.
+- **A recovered face gets a worse embedding.** Passes 3, 5 and 6 detect on a shadow-lifted or
+  contrast-stretched (and, in pass 6, blurred) copy, so the 128-d vector for such a face is
+  computed from processed pixels. The crop sent to Lens is always cut from the untouched still,
+  so only chapter 02 is affected — but two photos of the same person will land further apart if
+  one of them needed the fallback.
 - **Blink liveness stops a photograph, not a replay.** Holding up a still image fails the
   eye-aspect-ratio check. Playing a video of someone blinking does not.
 - **The enrol/match gallery is not part of the pipeline.** `/api/enroll` and `/api/match` still
@@ -343,6 +377,11 @@ invert their success semantics in tamper mode so a mismatch reads as green.
   shutter copies the frame straight into a canvas instead of encoding a full-resolution JPEG.
   Boxes, crops and the on-screen stage all share the capped canvas's coordinate space, so
   raising the cap is fine but detecting on one size and cropping from another is not.
+- **Chapters are joined by `.chapter-seam`, not a `border-t`.** A full-width 1px rule read as a
+  hard line slicing the page into stacked boxes and cut straight across the backdrop; the
+  utility in `app/globals.css` draws a hairline that fades to nothing before either edge plus a
+  very faint bloom below it. Both layers sit inside the section's 4rem top padding, so neither
+  can wash over the text. `#log` and the footer use it too.
 - Model weights are fetched from jsDelivr at runtime. Vendor them into `public/` if you need
   the app to work offline.
 

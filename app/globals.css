@@ -223,6 +223,51 @@
       linear-gradient(to bottom, oklch(0.82 0.15 195 / 6%) 1px, transparent 1px);
     background-size: 40px 40px;
   }
+
+  /*
+    The join between two chapters. A `border-t` ran the full width at a constant weight,
+    which read as a hard rule slicing the page into stacked boxes and cut straight across
+    the backdrop behind it. This fades to nothing well before either edge and blooms very
+    faintly downward, so the sections still separate but the page reads as continuous. The
+    old rule sat at a constant 22/255 above the background for its whole length; this peaks
+    at 20 dead centre and averages under half that across the width, reaching zero before
+    the viewport edge.
+
+    Both layers live in the section's top padding (4rem, the smaller of the two `py`
+    values), so neither can ever wash over the text below.
+  */
+  .chapter-seam {
+    position: relative;
+  }
+  .chapter-seam::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      transparent,
+      color-mix(in oklab, var(--primary) 2.5%, transparent) 26%,
+      color-mix(in oklab, var(--primary) 4%, transparent) 50%,
+      color-mix(in oklab, var(--primary) 2.5%, transparent) 74%,
+      transparent
+    );
+  }
+  .chapter-seam::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 4rem;
+    pointer-events: none;
+    background: radial-gradient(
+      72% 100% at 50% 0%,
+      color-mix(in oklab, var(--primary) 6%, transparent),
+      transparent 70%
+    );
+  }
 }
 
 ::-webkit-scrollbar {

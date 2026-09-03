@@ -25,7 +25,7 @@ export function Chapter({
   return (
     <section
       id={id}
-      className={cn('scroll-mt-24 border-t border-primary/10 py-16 sm:py-24', className)}
+      className={cn('chapter-seam scroll-mt-24 py-16 sm:py-24', className)}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <Reveal>

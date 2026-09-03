@@ -232,7 +232,7 @@ export default function Page() {
           </a>
         </HudPanel>
       </Chapter>
-      <section id="log" className="scroll-mt-24 border-t border-primary/10 py-16">
+      <section id="log" className="chapter-seam scroll-mt-24 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <HudPanel className="h-64 overflow-hidden p-0">
             <StatusLog lines={p.log} />
@@ -240,7 +240,7 @@ export default function Page() {
         </div>
       </section>
 
-      <footer className="border-t border-primary/10 py-10">
+      <footer className="chapter-seam py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4 text-center sm:px-6">
           <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground/60">
             face-api in-browser · google lens · ethereum sepolia

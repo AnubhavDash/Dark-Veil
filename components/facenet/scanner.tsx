@@ -180,7 +180,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
         if (found.length === 0) {
           log(
             'error',
-            'no face found after five passes — more light, a straighter angle, or a photo where the face fills more of the frame will all help',
+            'no face found after six passes — more light, a straighter angle, or a photo where the face fills more of the frame will all help',
           )
           return
         }
@@ -353,13 +353,13 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
           const found = await trackFaces(video, boosted)
           if (cancelled) return
 
-          // Half a second of empty frames means the cheap pass is not going to find
-          // this face: a dim or grainy camera needs the bigger, contrast-stretched one.
+          // Half a second of empty frames means the cheap pass is not going to find this
+          // face: a dim or backlit one needs its shadows lifted before anything shows up.
           if (found.length === 0) {
             misses += 1
             if (misses === 5 && !boosted) {
               boosted = true
-              log('info', 'no face at 224px — boosting the live pass (320px + contrast)')
+              log('info', 'no face yet — lifting the shadows on the live pass')
             }
           } else {
             misses = 0
@@ -405,7 +405,8 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
     }
   }, [camActive, log])
 
-  const reset = useCallback(() => {
+  /** Throw away the captured frame and everything derived from it. */
+  const clearStill = useCallback(() => {
     stillRef.current = null
     setHasStill(false)
     setFaces([])
@@ -413,11 +414,33 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
     setSelected(0)
     setBlinks(0)
     eyePhaseRef.current = 'open'
+    onReset()
+  }, [onReset])
+
+  const reset = useCallback(() => {
+    clearStill()
     setCamError(null)
     stopCam()
-    onReset()
     log('info', 'scanner reset')
-  }, [log, onReset, stopCam])
+  }, [clearStill, log, stopCam])
+
+  /**
+   * Changing capture mode starts over. A still left on the stage from the other tab read
+   * as a frame this tab had already captured, and the encoding and search below it still
+   * described that old frame — so the whole pipeline had to be cleared with it.
+   */
+  const switchMode = useCallback(
+    (next: Mode) => {
+      if (next === mode) return
+      setMode(next)
+      setCamError(null)
+      stopCam()
+      if (!hasStill && faces.length === 0) return
+      clearStill()
+      log('info', `switched to ${next} — the previous frame and its results were cleared`)
+    },
+    [clearStill, faces.length, hasStill, log, mode, stopCam],
+  )
 
   const earPct = track.ear === null ? 0 : Math.min(100, (track.ear / 0.45) * 100)
 
@@ -427,11 +450,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
         {(['upload', 'webcam'] as Mode[]).map((m) => (
           <button
             key={m}
-            onClick={() => {
-              setMode(m)
-              setCamError(null)
-              if (m === 'upload') stopCam()
-            }}
+            onClick={() => switchMode(m)}
             disabled={disabled}
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2 font-mono text-xs uppercase tracking-wider transition-colors',
@@ -563,18 +582,38 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
             <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
               <Eye className="h-3.5 w-3.5 text-primary" /> liveness · eye aspect ratio
             </span>
-            <button
-              onClick={() => setLivenessOn((v) => !v)}
-              disabled={disabled}
-              className={cn(
-                'rounded-md border px-2 py-0.5 font-mono text-2xs uppercase tracking-wider transition-colors',
-                livenessOn
-                  ? 'border-primary/50 bg-primary/10 text-primary'
-                  : 'border-border text-muted-foreground hover:text-foreground',
-              )}
+            {/*
+              Two visible options with the live one lit, rather than one button captioned
+              with the state it is already in — that read as a label, so nobody realised
+              the shutter trigger could be changed at all.
+            */}
+            <div
+              role="group"
+              aria-label="Shutter trigger"
+              className="flex items-center gap-0.5 rounded-md border border-border bg-black/40 p-0.5"
             >
-              {livenessOn ? 'blink to capture' : 'manual capture'}
-            </button>
+              {([true, false] as const).map((on) => (
+                <button
+                  key={String(on)}
+                  onClick={() => setLivenessOn(on)}
+                  disabled={disabled}
+                  aria-pressed={livenessOn === on}
+                  title={
+                    on
+                      ? 'A real blink fires the shutter'
+                      : 'Press the button below to fire the shutter'
+                  }
+                  className={cn(
+                    'rounded px-2 py-0.5 font-mono text-2xs uppercase tracking-wider transition-colors',
+                    livenessOn === on
+                      ? 'bg-primary/15 text-primary'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {on ? 'blink' : 'manual'}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="relative h-2 w-full overflow-hidden rounded-full bg-black/40">
@@ -608,7 +647,7 @@ export function Scanner({ log, onDetected, onReset, disabled }: ScannerProps) {
                     ? 'eyes closed'
                     : livenessOn
                       ? 'awaiting blink'
-                      : 'live'}
+                      : 'manual shutter'}
             </span>
           </div>
         </div>

@@ -54,7 +54,7 @@ install, no keys.
 
 | # | Chapter | What actually happens |
 |---|---------|----------------------|
-| 01 | Capture | TinyFaceDetector at 224px drives a ~10 fps HUD; eye-aspect-ratio blink detection fires the shutter; the captured still goes through the detection cascade below, with landmarks and descriptors for every face |
+| 01 | Capture | TinyFaceDetector at 224px drives a ~10 fps HUD; the shutter is a button, or eye-aspect-ratio blink detection if you switch it on; the captured still goes through the detection cascade below, with landmarks and descriptors for every face |
 | 02 | Encode | The 128-d embedding is drawn as a 16×8 heatmap; hover a cell to read that dimension's exact value. Two photos of the same person produce visibly similar tiles |
 | 03 | Search | The crop — and only the crop — goes to Google Lens for a real reverse image lookup; results are cached in Neon by sha256 of the image so repeat runs cost nothing. Google fetches the crop itself, so this needs a public origin |
 | 04 | Anchor | Record → canonical JSON → keccak256 → Sepolia calldata; the tamper button edits one field and re-verifies so you can watch the check fail |
@@ -64,7 +64,7 @@ install, no keys.
 
 TinyFaceDetector at 416px is fast and handles an ordinary well-lit photo, but it gives up on
 grain, dim light, low contrast, backlighting and faces that sit small in a wide frame. Rather
-than answer "no face detected" there, `detectFaces()` escalates — six passes, cheapest first,
+than answer "no face detected" there, `detectFaces()` escalates — seven passes, cheapest first,
 stopping at the first that finds something, so a photo that works immediately pays nothing for
 the rest:
 
@@ -76,6 +76,7 @@ the rest:
 | 4 | SSD MobileNet v1, confidence ≥ 0.25 | grain, dim light, off-angle heads — 5.6 MB, fetched once and only if needed |
 | 5 | SSD MobileNet v1 at 0.2 over a contrast-stretched copy | frames using a fraction of the brightness range |
 | 6 | SSD MobileNet v1 at 0.2 over a denoised, contrast-stretched copy | dim *and* grainy webcam frames, where stretching alone amplifies the noise |
+| 7 | SSD MobileNet v1 at 0.2 over six overlapping windows | a face too small a part of the frame to survive the detector's own downscale |
 
 Pass 3 exists because passes 5 and 6 cannot help a backlit face. A contrast stretch only has
 something to give when the histogram has unused room at both ends, and a bright wall behind
@@ -85,8 +86,22 @@ mean 34/255. Gamma needs no headroom, because it remaps every value through `255
 and the shadows come up on their own. That frame is undetectable raw *and* stretched at every
 input size tried (224, 320, 416, 512, 608, 800); at γ 1.8 it scores 0.50 at 800px.
 
+Pass 7 exists because none of the six before it change the one thing that matters when a face is
+only a few percent of the frame. Every one of them hands the detector the whole frame, and the
+detector's first move is to shrink that frame to its own fixed input — so a head at 4% of a
+1600px still arrives about 20px across, with nothing left in it to find. A larger `inputSize`
+cannot fix a ratio: on the poster that prompted this pass, all six returned nothing, and the tiny
+detector pushed to 1024px only scraped the face at 0.101. Cutting the frame into six overlapping
+640×600 windows raises the ratio instead — the same head is 8% of a window, where SSD scores it
+0.405 with an eye span of 0.610, and the other five windows return nothing at all. Boxes and
+landmarks are shifted back into frame coordinates and a face caught by two windows is
+deduplicated, so nothing downstream learns this happened. Six windows are six more chances to
+invent a face, so it was checked the other way too: over four images containing no face at all —
+three app screenshots and a share card, 24 windows — it produced not one box.
+
 The status log names the pass that succeeded. Measured against the same face crop degraded
-five ways, plus one real frame from a laptop webcam — one pass at 416px versus the cascade:
+five ways, one real frame from a laptop webcam, and one near-black film poster — a single pass
+at 416px versus the cascade:
 
 | Frame | Single 416px pass | Cascade |
 |-------|-------------------|---------|
@@ -97,6 +112,7 @@ five ways, plus one real frame from a laptop webcam — one pass at 416px versus
 | black and white, contrast squeezed to a 76-value band | **missed** | found · pass 5 |
 | face at 14% of a 1600px frame | **missed** | found · pass 2 |
 | real backlit webcam frame, face at mean luminance 34/255 | **missed** | found · pass 3 |
+| film poster: side profile, face 3.8% of the frame, 97% of pixels ≤ 8/255 | **missed** | found · pass 7 |
 | dimmed to 30% *and* heavy grain (mean luminance 18/255) | **missed** | **missed** |
 
 The last row is the honest floor: at that point the noise is as large as the signal, and a
@@ -111,14 +127,20 @@ a near-black film poster, the detector boxed the lit head of a hammer, and the p
 what it was told: cropped it, embedded it, and sent it off to be reverse-searched — a wrong
 answer presented with exactly as much confidence as a right one.
 
-So a detection that did not score well has to also look like a face. Measured over the two
-frames that actually failed, every false box was 5–6% of the frame's long edge, with its outer
-eye corners under 0.34 of its own width apart and a score of 0.10–0.24; every true detection of
-the same face, across four gammas and three input sizes, was 34–55% of the frame with an eye
-span of 0.42–0.57, scoring up to 0.50. Below a score of 0.45, `plausible()` in `lib/face.ts`
-requires at least 12% of the frame and an eye span between 0.38 and 0.85 of the box width, and
-the log says how many boxes it discarded. A detection that scores well is never thrown away on
-geometry — a missed face is the worse failure of the two.
+So a detection that did not score well has to also look like a face, and what tells the two
+apart is eye span. Every false box across every frame that has failed here put its outer eye
+corners under 0.34 of the box width — 0.23 on the hammer, 0.08 and 0.13 on the junk the windowed
+pass turns up — while every true detection of those same faces ran 0.40 to 0.61, at scores as
+low as 0.10. Below a score of 0.45, `plausible()` in `lib/face.ts` requires an eye span between
+0.38 and 0.85 of the box width, and the log says how many boxes it discarded. A detection that
+scores well is never thrown away on geometry — a missed face is the worse failure of the two.
+
+The size floor beside it is 40 pixels of box width, not a share of the frame. An earlier version
+demanded 12% of the long edge, which does reject the hammer at 5.6% — and would also have
+rejected Thor's actual head, at 3.8% of that same poster. What a share of the frame really
+measures is how far away the subject stood, and that is no evidence about whether they are a
+face. Pixels are: below roughly 40 of them there is nothing left to recognise anyone from. The
+smallest true face measured here is 50 across.
 
 The live webcam loop escalates too, on the same principle: it runs at 224px, and if it finds
 nothing for half a second it lifts the shadows and drops its threshold to 0.2. It stays at
@@ -235,7 +257,7 @@ npm start
 ```
 
 The webcam needs a secure context. `localhost` counts; a LAN IP does not — use HTTPS or a
-tunnel if you want to test the blink capture from a phone.
+tunnel if you want to test camera capture from a phone.
 
 ## Which blockchain
 
@@ -326,22 +348,29 @@ invert their success semantics in tamper mode so a mismatch reads as green.
   testnets do get deprecated. The permanence claim is only as strong as the network you point
   the code at.
 - **Detection has a floor.** The cascade in [When the first pass misses](#when-the-first-pass-misses)
-  recovers dim, low-contrast, backlit, black-and-white and small-in-frame faces that a single
-  pass drops, but a frame that is both very dark and heavily grained stays undetected, and so do
-  profile views and heavy occlusion. Error rates for face embeddings are also known to vary
+  recovers dim, low-contrast, backlit, black-and-white, small-in-frame and side-profile faces
+  that a single pass drops, but a frame that is both very dark and heavily grained stays
+  undetected, and so does heavy occlusion. Error rates for face embeddings are also known to vary
   across demographic groups; nothing here corrects for that.
+- **Detecting a face is not the same as finding it on the web.** The windowed pass recovers a
+  face by cutting a small crop out of a big frame, and small is exactly what Lens has least to
+  work with: the poster it was built for yields a 50×92 near-black side profile. The pipeline
+  will run end to end on that crop and anchor whatever comes back, including no matches at all.
+  A bright, front-facing, reasonably large face is still the only input that reliably reaches
+  chapter 04 with a URL.
 - **The plausibility filter can discard a real face.** A detection scoring under 0.45 is kept
-  only if it covers at least 12% of the frame and its eyes sit where a face's eyes go. That is
-  what stops a bright blob on a dark poster from being cropped and searched as a person, but a
-  genuine face that is both small in frame and weakly detected will be dropped with it, and a
-  steeply turned head can fail the eye-span check. The log says when this happens.
+  only if its box is at least 40px wide and its eyes sit where a face's eyes go. That is what
+  stops a bright blob on a dark poster from being cropped and searched as a person, but a
+  steeply turned head can fail the eye-span check and be dropped with it. The log says when
+  this happens.
 - **A recovered face gets a worse embedding.** Passes 3, 5 and 6 detect on a shadow-lifted or
   contrast-stretched (and, in pass 6, blurred) copy, so the 128-d vector for such a face is
   computed from processed pixels. The crop sent to Lens is always cut from the untouched still,
   so only chapter 02 is affected — but two photos of the same person will land further apart if
   one of them needed the fallback.
-- **Blink liveness stops a photograph, not a replay.** Holding up a still image fails the
-  eye-aspect-ratio check. Playing a video of someone blinking does not.
+- **Blink liveness stops a photograph, not a replay.** It is also off until you turn it on —
+  the shutter is a button by default. With it on, holding up a still image fails the
+  eye-aspect-ratio check; playing a video of someone blinking does not.
 - **The enrol/match gallery is not part of the pipeline.** `/api/enroll` and `/api/match` still
   work and still rank descriptors by Euclidean distance at 0.6, but nothing on the page calls
   them: that gallery only ever held faces you enrolled yourself, so it could not identify a
